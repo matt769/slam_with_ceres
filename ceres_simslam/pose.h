@@ -14,8 +14,10 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Eigen::Vector3d p_;
     Eigen::Quaterniond q_;
-    Pose() : p_(Eigen::Vector3d::Zero()), q_(Eigen::Quaterniond::Identity()) {};
     Pose(Eigen::Vector3d p, Eigen::Quaterniond q) : p_(p), q_(q) {};
+    Pose() : Pose(Eigen::Vector3d::Zero(), Eigen::Quaterniond::Identity()) {};
+    Pose(Eigen::Vector3d p) : Pose(p, Eigen::Quaterniond::Identity()) {};
+    Pose(Eigen::Quaterniond q) : Pose(Eigen::Vector3d::Zero(), q) {};
     Pose inverse() { return Pose(q_.conjugate() * -p_, q_.conjugate()); }
 };
 
