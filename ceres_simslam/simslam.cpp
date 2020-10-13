@@ -32,7 +32,7 @@ RelativeMotion addNoise(const RelativeMotion& motion, const double p_noise_stdev
     return noisy_motion;
 }
 
-int main(int argc, char* argv[]) {
+int main(int /*argc*/, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
     std::default_random_engine noise_generator(0);
 
