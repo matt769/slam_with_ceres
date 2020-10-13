@@ -13,29 +13,12 @@
 #include <glog/logging.h>
 
 #include "cost_functions.h"
+#include "graph.h"
 #include "pose.h"
 
 // start off simple, following pose_graph_3d but with my own generated data
 // then try using eigen structures
 // then maybe simulate the robot a bit more 'freely'?
-
-struct Edge {
-    size_t start;
-    size_t end;
-    RelativeMotion relative_motion;
-};
-
-class Node {
-public:
-    size_t id_;
-    Pose pose_;
-//    explicit Node(Pose pose) : id_(Node::nextId()), pose_(std::move(pose)) {};
-//    Node() : Node(Pose()) {};
-//    static size_t nextId() { return next_id++; }
-//private:
-//    static size_t next_id;
-};
-
 
 RelativeMotion addNoise(const RelativeMotion& motion, const double p_noise_stdev, std::default_random_engine& generator) {
     // TODO add rotation noise

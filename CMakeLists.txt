@@ -12,3 +12,6 @@ include_directories(
 
 add_executable(simslam ${PROJECT_NAME}/simslam.cpp)
 target_link_libraries(simslam ${CERES_LIBRARIES})
+
+add_executable(tests ${PROJECT_NAME}/test.cpp)
+target_link_libraries(tests ${CERES_LIBRARIES})
