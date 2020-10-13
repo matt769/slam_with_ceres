@@ -5,12 +5,12 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <random>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <ceres/ceres.h>
 #include <glog/logging.h>
-#include <fstream>
 
 #include "cost_functions.h"
 #include "pose.h"
@@ -37,12 +37,27 @@ public:
 };
 
 
+RelativeMotion addNoise(const RelativeMotion& motion, const double p_noise_stdev, std::default_random_engine& generator) {
+    // TODO add rotation noise
+    // generate some 'random' noise
+    std::normal_distribution<double> distribution(0.0, p_noise_stdev);
+    RelativeMotion noisy_motion(motion);
+    noisy_motion.p_.x() = distribution(generator);
+    noisy_motion.p_.y() = distribution(generator);
+//    noisy_motion.p_.z() = distribution(generator);
+    noisy_motion.p_.z() = motion.p_.z();
+    return noisy_motion;
+}
+
 int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
+    std::default_random_engine noise_generator(0);
 
     std::vector<Pose> true_trajectory;
     std::vector<Edge> edges;
     std::vector<Node> nodes;
+    std::vector<Edge> noisy_edges;
+    std::vector<Node> noisy_nodes;
 
     // just move around in xy plane, no rotation
     const Eigen::Vector3d forward(1.0, 0.0, 0.0);
@@ -51,21 +66,21 @@ int main(int argc, char* argv[]) {
     const Eigen::Vector3d right = -left;
 
     // add starting node
+    // TODO review all this - have better support for noisy and ground truth versions
     size_t node_id = 0;
+    size_t noisy_node_id = 0;
     nodes.emplace_back(Node{node_id++, Pose()});
-
-//    auto buildGraph = [&](const RelativeMotion& motion) {
-//        Node start_node = nodes.back();
-//        Pose new_pose = start_node.pose_ * motion;
-//        nodes.emplace_back(new_pose);
-//        size_t end_id = nodes.back().id_;
-//        edges.emplace_back(Edge{start_node.id_, end_id, motion});
-//    };
+    noisy_nodes.emplace_back(Node{node_id++, Pose()});
 
     auto buildGraph = [&](const RelativeMotion& motion) {
         Pose new_pose = nodes.back().pose_ * motion;
         nodes.emplace_back(Node{node_id++, new_pose});
         edges.emplace_back(Edge{node_id-2, node_id-1, motion}); // URGH
+
+        RelativeMotion noisy_motion = addNoise(motion, 0.05, noise_generator);
+        Pose new_noisy_pose = nodes.back().pose_ * noisy_motion;
+        noisy_nodes.emplace_back(Node{noisy_node_id++, new_noisy_pose});
+        noisy_edges.emplace_back(Edge{noisy_node_id-2, noisy_node_id-1, noisy_motion}); // URGH
     };
 
     constexpr size_t steps_fw_bw = 4;
@@ -90,9 +105,14 @@ int main(int argc, char* argv[]) {
     // create a loop closure at the end
     RelativeMotion T_end_start = nodes.back().pose_.inverse() * nodes.front().pose_;
     edges.emplace_back(Edge{node_id-1, 0, T_end_start});
+    RelativeMotion T_end_start_noisy = addNoise(T_end_start, 0.05, noise_generator);
+    noisy_edges.emplace_back(Edge{noisy_node_id-1, 0, T_end_start_noisy});
 
-    // populate nodes and edges structures
-    // TODO tidy up these duplicated data structures and their creation/population later
+
+
+    // TODO tidy up data structures
+    //  maybe add graph structure
+    //  and make node id generation better
 
     for (const auto& node: nodes) {
         std::cout << node.id_ << '\t' << node.pose_.p_.transpose() << '\n';
@@ -109,12 +129,20 @@ int main(int argc, char* argv[]) {
 
     LOG(INFO) << nodes.size() << '\t' << edges.size();
     CHECK(nodes.size() == edges.size());
+    CHECK(nodes.size() == noisy_nodes.size());
+    CHECK(edges.size() == noisy_edges.size());
 
     // output graph current state
     std::ofstream output_file;
-    output_file.open("initial_poses.txt");
+    output_file.open("true_poses.txt");
     for (const auto& node: nodes) {
         output_file << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
+    }
+
+    std::ofstream output_file_noisy;
+    output_file_noisy.open("noisy_poses.txt");
+    for (const auto& node: noisy_nodes) {
+        output_file_noisy << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
     }
 
     // create Ceres problem and optimise
@@ -127,19 +155,19 @@ int main(int argc, char* argv[]) {
 
 
 
-    for (const auto& edge: edges) {
+    for (const auto& edge: noisy_edges) {
         ceres::CostFunction* cost_function = RelativeMotionCost::Create(edge.relative_motion);
         problem.AddResidualBlock(cost_function, loss_function,
-                                nodes[edge.start].pose_.p_.data(), nodes[edge.start].pose_.q_.coeffs().data(),
-                                nodes[edge.end].pose_.p_.data(), nodes[edge.end].pose_.q_.coeffs().data());
-        problem.SetParameterization(nodes[edge.start].pose_.q_.coeffs().data(),
+                                noisy_nodes[edge.start].pose_.p_.data(), noisy_nodes[edge.start].pose_.q_.coeffs().data(),
+                                 noisy_nodes[edge.end].pose_.p_.data(), noisy_nodes[edge.end].pose_.q_.coeffs().data());
+        problem.SetParameterization(noisy_nodes[edge.start].pose_.q_.coeffs().data(),
                                      quaternion_local_parameterization);
-        problem.SetParameterization(nodes[edge.end].pose_.q_.coeffs().data(),
+        problem.SetParameterization(noisy_nodes[edge.end].pose_.q_.coeffs().data(),
                                      quaternion_local_parameterization);
     }
 
-    problem.SetParameterBlockConstant(nodes[0].pose_.p_.data());
-    problem.SetParameterBlockConstant(nodes[0].pose_.q_.coeffs().data());
+    problem.SetParameterBlockConstant(noisy_nodes[0].pose_.p_.data());
+    problem.SetParameterBlockConstant(noisy_nodes[0].pose_.q_.coeffs().data());
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
@@ -153,9 +181,15 @@ int main(int argc, char* argv[]) {
     // output graph optimised state
     std::ofstream output_file_opt;
     output_file_opt.open("optimised_poses.txt");
-    for (const auto& node: nodes) {
+    for (const auto& node: noisy_nodes) {
         output_file_opt << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
     }
+
+    // compare true and optimised
+
+    // total trajectory distance (simple metric)
+
+
 
     return 0;
 }
