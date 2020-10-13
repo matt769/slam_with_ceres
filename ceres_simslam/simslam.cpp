@@ -4,62 +4,161 @@
 
 #include <vector>
 #include <iostream>
+#include <fstream>
 
-#include "Eigen/Core"
-#include "Eigen/Geometry"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <ceres/ceres.h>
+#include <glog/logging.h>
+#include <fstream>
+
+#include "cost_functions.h"
+#include "pose.h"
 
 // start off simple, following pose_graph_3d but with my own generated data
 // then try using eigen structures
 // then maybe simulate the robot a bit more 'freely'?
 
-struct Pose {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Eigen::Vector3d p;
-    Eigen::Quaterniond q;
-    Pose() : p(Eigen::Vector3d::Zero()), q(Eigen::Quaterniond::Identity()) {};
-    Pose(Eigen::Vector3d p_in, Eigen::Quaterniond q_in) : p(p_in), q(q_in) {};
+struct Edge {
+    size_t start;
+    size_t end;
+    RelativeMotion relative_motion;
 };
 
-Pose operator*(const Pose& a, const Pose& b) {
-    return Pose(a.p + a.q * b.p, a.q * b.q);
-}
+class Node {
+public:
+    size_t id_;
+    Pose pose_;
+//    explicit Node(Pose pose) : id_(Node::nextId()), pose_(std::move(pose)) {};
+//    Node() : Node(Pose()) {};
+//    static size_t nextId() { return next_id++; }
+//private:
+//    static size_t next_id;
+};
 
-int main() {
+
+int main(int argc, char* argv[]) {
+    google::InitGoogleLogging(argv[0]);
+
     std::vector<Pose> true_trajectory;
-    true_trajectory.emplace_back(Pose());
-    std::vector<Pose> perfect_odometry;
+    std::vector<Edge> edges;
+    std::vector<Node> nodes;
+
     // just move around in xy plane, no rotation
     const Eigen::Vector3d forward(1.0, 0.0, 0.0);
     const Eigen::Vector3d backward = -forward;
     const Eigen::Vector3d left(0.0, 1.0, 0.0);
     const Eigen::Vector3d right = -left;
 
-    constexpr size_t steps_fw_bw = 10;
-    constexpr size_t steps_left_right = 5;
+    // add starting node
+    size_t node_id = 0;
+    nodes.emplace_back(Node{node_id++, Pose()});
+
+//    auto buildGraph = [&](const RelativeMotion& motion) {
+//        Node start_node = nodes.back();
+//        Pose new_pose = start_node.pose_ * motion;
+//        nodes.emplace_back(new_pose);
+//        size_t end_id = nodes.back().id_;
+//        edges.emplace_back(Edge{start_node.id_, end_id, motion});
+//    };
+
+    auto buildGraph = [&](const RelativeMotion& motion) {
+        Pose new_pose = nodes.back().pose_ * motion;
+        nodes.emplace_back(Node{node_id++, new_pose});
+        edges.emplace_back(Edge{node_id-2, node_id-1, motion}); // URGH
+    };
+
+    constexpr size_t steps_fw_bw = 4;
+    constexpr size_t steps_left_right = 3;
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
-        perfect_odometry.emplace_back(Pose(forward, Eigen::Quaterniond::Identity()));
+        RelativeMotion motion(forward, Eigen::Quaterniond::Identity());
+        buildGraph(motion);
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
-        perfect_odometry.emplace_back(Pose(left, Eigen::Quaterniond::Identity()));
+        RelativeMotion motion(left, Eigen::Quaterniond::Identity());
+        buildGraph(motion);
     }
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
-        perfect_odometry.emplace_back(Pose(backward, Eigen::Quaterniond::Identity()));
+        RelativeMotion motion(backward, Eigen::Quaterniond::Identity());
+        buildGraph(motion);
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
-        perfect_odometry.emplace_back(Pose(right, Eigen::Quaterniond::Identity()));
+        RelativeMotion motion(right, Eigen::Quaterniond::Identity());
+        buildGraph(motion);
     }
 
-    for (const auto& movement: perfect_odometry) {
-        true_trajectory.emplace_back(true_trajectory.back() * movement);
+    // create a loop closure at the end
+    RelativeMotion T_end_start = nodes.back().pose_.inverse() * nodes.front().pose_;
+    edges.emplace_back(Edge{node_id-1, 0, T_end_start});
+
+    // populate nodes and edges structures
+    // TODO tidy up these duplicated data structures and their creation/population later
+
+    for (const auto& node: nodes) {
+        std::cout << node.id_ << '\t' << node.pose_.p_.transpose() << '\n';
+    }
+    std::cout << '\n';
+    for (const auto& edge: edges) {
+        std::cout << edge.start << '\t' << edge.end << '\t' << edge.relative_motion.p_.transpose() << '\n';
+    }
+    std::cout << '\n';
+//    std::cout << T_end_start.p_.transpose() << '\n';
+
+    // TODO add some noise to the odometry
+    //  and make sure the nodes don't start at the exact correct position!
+
+    LOG(INFO) << nodes.size() << '\t' << edges.size();
+    CHECK(nodes.size() == edges.size());
+
+    // output graph current state
+    std::ofstream output_file;
+    output_file.open("initial_poses.txt");
+    for (const auto& node: nodes) {
+        output_file << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
     }
 
-    for (const auto& pose: true_trajectory) {
-        std::cout << pose.p.transpose() << '\n';
+    // create Ceres problem and optimise
+    ceres::Problem problem;
+    ceres::LossFunction* loss_function = nullptr;
+    ceres::LocalParameterization* quaternion_local_parameterization = new ceres::EigenQuaternionParameterization;
+
+    // TODO maybe I should make a better data structure for my graph?
+
+
+
+
+    for (const auto& edge: edges) {
+        ceres::CostFunction* cost_function = RelativeMotionCost::Create(edge.relative_motion);
+        problem.AddResidualBlock(cost_function, loss_function,
+                                nodes[edge.start].pose_.p_.data(), nodes[edge.start].pose_.q_.coeffs().data(),
+                                nodes[edge.end].pose_.p_.data(), nodes[edge.end].pose_.q_.coeffs().data());
+        problem.SetParameterization(nodes[edge.start].pose_.q_.coeffs().data(),
+                                     quaternion_local_parameterization);
+        problem.SetParameterization(nodes[edge.end].pose_.q_.coeffs().data(),
+                                     quaternion_local_parameterization);
     }
 
-    //
+    problem.SetParameterBlockConstant(nodes[0].pose_.p_.data());
+    problem.SetParameterBlockConstant(nodes[0].pose_.q_.coeffs().data());
 
+    ceres::Solver::Options options;
+    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.minimizer_progress_to_stdout = true;
+    ceres::Solver::Summary summary;
+    Solve(options, &problem, &summary);
 
+    std::cout << summary.FullReport() << '\n';
+    // TODO output before and after
+
+    // output graph optimised state
+    std::ofstream output_file_opt;
+    output_file_opt.open("optimised_poses.txt");
+    for (const auto& node: nodes) {
+        output_file_opt << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
+    }
 
     return 0;
 }
+
+// TODO find out why my static function for generating node ids caused a compilation error
+//  (when filling vector?)
