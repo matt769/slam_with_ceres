@@ -48,7 +48,7 @@ public:
         Eigen::Map<Eigen::Matrix<T, 6, 1>> residuals(residuals_ptr);
 //        residuals.template block<1,3>(0,0) = (implied_edge.p_ - observed_edge_.p_).cast<T>();
 //        residuals.template block<3, 1>(3, 0) = T(2.0) * (implied_edge.q_.conjugate() * observed_edge_.q_).vec().cast<T>();
-        residuals.template block<3,1>(0,0) = observed_edge_.p_.template cast<T>() - p_ab;
+        residuals.template block<3,1>(0,0) = observed_edge_.p_.template cast<T>() - p_ab; // POSE_GRAPH_3D example has these the other way around??
         residuals.template block<3, 1>(3, 0) = T(2.0) * (observed_edge_.q_.template cast<T>() * q_ab.conjugate()).vec();
 
         return true;
