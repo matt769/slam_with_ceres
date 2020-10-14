@@ -25,9 +25,9 @@ RelativeMotion addNoise(const RelativeMotion& motion, const double p_noise_stdev
     // generate some 'random' noise
     std::normal_distribution<double> distribution(0.0, p_noise_stdev);
     RelativeMotion noisy_motion(motion);
-    noisy_motion.p_.x() = distribution(generator);
-    noisy_motion.p_.y() = distribution(generator);
-//    noisy_motion.p_.z() = distribution(generator);
+    noisy_motion.p_.x() += distribution(generator);
+    noisy_motion.p_.y() += distribution(generator);
+//    noisy_motion.p_.z() += distribution(generator);
     noisy_motion.p_.z() = motion.p_.z();
     return noisy_motion;
 }
@@ -53,7 +53,7 @@ int main(int /*argc*/, char* argv[]) {
     size_t node_id = 0;
     size_t noisy_node_id = 0;
     nodes.emplace_back(Node{node_id++, Pose()});
-    noisy_nodes.emplace_back(Node{node_id++, Pose()});
+    noisy_nodes.emplace_back(Node{noisy_node_id++, Pose()});
 
     auto buildGraph = [&](const RelativeMotion& motion) {
         Pose new_pose = nodes.back().pose_ * motion;
@@ -61,7 +61,7 @@ int main(int /*argc*/, char* argv[]) {
         edges.emplace_back(Edge{node_id-2, node_id-1, motion}); // URGH
 
         RelativeMotion noisy_motion = addNoise(motion, 0.05, noise_generator);
-        Pose new_noisy_pose = nodes.back().pose_ * noisy_motion;
+        Pose new_noisy_pose = noisy_nodes.back().pose_ * noisy_motion;
         noisy_nodes.emplace_back(Node{noisy_node_id++, new_noisy_pose});
         noisy_edges.emplace_back(Edge{noisy_node_id-2, noisy_node_id-1, noisy_motion}); // URGH
     };
@@ -97,21 +97,21 @@ int main(int /*argc*/, char* argv[]) {
     //  maybe add graph structure
     //  and make node id generation better
 
-    for (const auto& node: nodes) {
-        std::cout << node.id_ << '\t' << node.pose_.p_.transpose() << '\n';
-    }
-    std::cout << '\n';
-    for (const auto& edge: edges) {
-        std::cout << edge.start << '\t' << edge.end << '\t' << edge.relative_motion.p_.transpose() << '\n';
-    }
-    std::cout << '\n';
+//    for (const auto& node: nodes) {
+//        std::cout << node.id_ << '\t' << node.pose_.p_.transpose() << '\n';
+//    }
+//    std::cout << '\n';
+//    for (const auto& edge: edges) {
+//        std::cout << edge.start << '\t' << edge.end << '\t' << edge.relative_motion.p_.transpose() << '\n';
+//    }
+//    std::cout << '\n';
 //    std::cout << T_end_start.p_.transpose() << '\n';
 
     // TODO add some noise to the odometry
     //  and make sure the nodes don't start at the exact correct position!
 
     LOG(INFO) << nodes.size() << '\t' << edges.size();
-    CHECK(nodes.size() == edges.size());
+//    CHECK(nodes.size() == edges.size());
     CHECK(nodes.size() == noisy_nodes.size());
     CHECK(edges.size() == noisy_edges.size());
 
