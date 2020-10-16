@@ -6,6 +6,10 @@
 #define CERES_SIMSLAM_SIMULATOR_H
 
 #include <random>
+#include <vector>
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include "graph.h"
 #include "pose.h"
@@ -13,8 +17,8 @@
 class Simulator {
 public:
     struct Noise {
-        double mean;
-        double std_dev;
+        Eigen::Matrix<double, 6, 1> mean;
+        Eigen::Matrix<double, 6, 1> std_dev;
     };
     Simulator();
     Simulator(Noise noise);
@@ -32,7 +36,7 @@ private:
     Graph graph_;
     Noise noise_;
     std::default_random_engine noise_generator_;
-    std::normal_distribution<double> noise_distribution_;
+    std::vector<std::normal_distribution<double>> noise_distribution_;
     RelativeMotion addNoise(const RelativeMotion& motion);
 };
 

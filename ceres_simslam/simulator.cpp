@@ -11,17 +11,20 @@
 
 
 Simulator::Simulator()
-    : Simulator(Noise{0.0, 0.0}) {}
+    : Simulator(Noise{Eigen::Matrix<double, 6, 1>::Zero(), Eigen::Matrix<double, 6, 1>::Zero()}) {}
 
 Simulator::Simulator(Noise noise)
         : noise_generator_(0)
 {
+    noise_distribution_.reserve(6);
     setNoise(noise);
 }
 
 void Simulator::setNoise(Noise noise) {
     noise_ = noise;
-    noise_distribution_ = std::normal_distribution<double>(noise_.mean, noise_.std_dev);
+    for (size_t idx = 0; idx < 6; ++idx) {
+        noise_distribution_[idx] = std::normal_distribution<double>(noise_.mean(idx), noise_.std_dev(idx));
+    }
 }
 
 void Simulator::addFirstNode(const Pose& pose) {
@@ -51,7 +54,7 @@ void Simulator::addLoopClosure(const size_t start, const size_t end) {
 }
 
 bool Simulator::optimiseGraph() {
-    graph_.optimise();
+    return graph_.optimise();
 }
 
 void Simulator::compare() const {
@@ -60,9 +63,8 @@ void Simulator::compare() const {
 
 RelativeMotion Simulator::addNoise(const RelativeMotion& motion) {
     RelativeMotion noisy_motion(motion);
-    noisy_motion.p_.x() += noise_distribution_(noise_generator_);
-    noisy_motion.p_.y() += noise_distribution_(noise_generator_);
-    noisy_motion.p_.z() = motion.p_.z();
+    noisy_motion.p_.x() += noise_distribution_[0](noise_generator_);
+    noisy_motion.p_.y() += noise_distribution_[1](noise_generator_);
     return noisy_motion;
 }
 
