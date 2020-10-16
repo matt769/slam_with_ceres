@@ -30,7 +30,10 @@ int main(int /*argc*/, char* argv[]) {
     noise.std_dev = Eigen::Matrix<double, 6, 1>::Zero();
     noise.std_dev(0) = 0.2; // x
     noise.std_dev(1) = 0.2; // y
-    Simulator simulator(noise);
+    Simulator::Drift drift;
+    drift.p_ = Eigen::Vector3d::Zero();
+    drift.q_ = Eigen::Quaterniond::Identity();
+    Simulator simulator(noise, drift);
     simulator.addFirstNode(Pose());
 
     constexpr size_t steps_fw_bw = 10;

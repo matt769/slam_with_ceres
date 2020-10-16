@@ -20,9 +20,9 @@ public:
         Eigen::Matrix<double, 6, 1> mean;
         Eigen::Matrix<double, 6, 1> std_dev;
     };
+    typedef Pose Drift;
     Simulator();
-    Simulator(Noise noise);
-    void setNoise(Noise noise);
+    Simulator(Noise noise, Drift drift);
     void addFirstNode(const Pose& pose);
     void addMotionEdge(const RelativeMotion& motion);
     void addLoopClosure();
@@ -35,9 +35,12 @@ private:
     Graph ground_truth_;
     Graph graph_;
     Noise noise_;
+    Drift drift_;
     std::default_random_engine noise_generator_;
     std::vector<std::normal_distribution<double>> noise_distribution_;
+    void setNoise(Noise noise);
     RelativeMotion addNoise(const RelativeMotion& motion);
+    RelativeMotion addDrift(const RelativeMotion& motion);
 };
 
 

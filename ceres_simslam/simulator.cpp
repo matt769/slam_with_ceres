@@ -11,10 +11,10 @@
 
 
 Simulator::Simulator()
-    : Simulator(Noise{Eigen::Matrix<double, 6, 1>::Zero(), Eigen::Matrix<double, 6, 1>::Zero()}) {}
+    : Simulator(Noise{Eigen::Matrix<double, 6, 1>::Zero(), Eigen::Matrix<double, 6, 1>::Zero()}, Drift()) {}
 
-Simulator::Simulator(Noise noise)
-        : noise_generator_(0)
+Simulator::Simulator(Noise noise, Drift drift)
+        : noise_generator_(0), drift_(drift)
 {
     noise_distribution_.reserve(6);
     setNoise(noise);
@@ -34,7 +34,7 @@ void Simulator::addFirstNode(const Pose& pose) {
 
 void Simulator::addMotionEdge(const RelativeMotion& motion) {
     ground_truth_.addMotionEdge(motion);
-    graph_.addMotionEdge(addNoise(motion));
+    graph_.addMotionEdge(addNoise(addDrift(motion)));
 }
 
 void Simulator::addLoopClosure() {
@@ -66,6 +66,13 @@ RelativeMotion Simulator::addNoise(const RelativeMotion& motion) {
     noisy_motion.p_.x() += noise_distribution_[0](noise_generator_);
     noisy_motion.p_.y() += noise_distribution_[1](noise_generator_);
     return noisy_motion;
+}
+
+RelativeMotion Simulator::addDrift(const RelativeMotion& motion) {
+    RelativeMotion drifted_motion(motion);
+    drifted_motion.p_ += drift_.p_;
+    drifted_motion.q_ *= drift_.q_;
+    return drifted_motion;
 }
 
 const Graph& Simulator::getGroundTruth() const {
