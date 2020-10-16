@@ -17,7 +17,7 @@ public:
     Pose();
     Pose(Eigen::Vector3d p);
     Pose(Eigen::Quaterniond q);
-    Pose inverse();
+    Pose inverse() const ;
 };
 
 Pose operator*(const Pose& a, const Pose& b);

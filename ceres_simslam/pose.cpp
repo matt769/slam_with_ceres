@@ -15,7 +15,7 @@ Pose::Pose(Eigen::Vector3d p) : Pose(p, Eigen::Quaterniond::Identity()) {};
 
 Pose::Pose(Eigen::Quaterniond q) : Pose(Eigen::Vector3d::Zero(), q) {};
 
-Pose Pose::inverse() { return Pose(q_.conjugate() * -p_, q_.conjugate()); }
+Pose Pose::inverse() const { return Pose(q_.conjugate() * -p_, q_.conjugate()); }
 
 Pose operator*(const Pose& a, const Pose& b) {
     return Pose(a.p_ + a.q_ * b.p_, a.q_ * b.q_);
