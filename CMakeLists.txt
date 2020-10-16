@@ -10,7 +10,11 @@ include_directories(
         ${CERES_INCLUDE_DIRS}
 )
 
-add_executable(simslam ${PROJECT_NAME}/simslam.cpp)
+add_executable(simslam
+        ${PROJECT_NAME}/simslam.cpp
+        ${PROJECT_NAME}/graph.cpp
+        ${PROJECT_NAME}/pose.cpp
+        )
 target_link_libraries(simslam ${CERES_LIBRARIES})
 
 add_executable(tests ${PROJECT_NAME}/test.cpp)
