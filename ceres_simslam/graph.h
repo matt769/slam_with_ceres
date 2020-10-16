@@ -6,6 +6,7 @@
 #define CERES_SIMSLAM_GRAPH_H
 
 #include <cstddef>
+#include <vector>
 
 #include "pose.h"
 
@@ -15,15 +16,29 @@ struct Edge {
     RelativeMotion relative_motion;
 };
 
-class Node {
-public:
+struct Node {
     size_t id_;
     Pose pose_;
-//    explicit Node(Pose pose) : id_(Node::nextId()), pose_(std::move(pose)) {};
-//    Node() : Node(Pose()) {};
-//    static size_t nextId() { return next_id++; }
-//private:
-//    static size_t next_id;
+};
+
+class Graph {
+public:
+    Graph();
+    void addFirstNode(const Pose& pose);
+    void addMotionEdge(const RelativeMotion& motion);
+    void addLoopClosureEdge(size_t start, size_t end, const RelativeMotion& motion);
+    size_t getLastNodeId() const;
+    const Node& getNode(size_t node_id) const;
+    const std::vector<Node>& getNodes() const;
+    const Node& getLastNode() const;
+    bool optimise();
+    std::string toString() const;
+private:
+    size_t addNode(const Pose& pose);
+    void addEdge(size_t start, size_t end, const RelativeMotion& motion);
+    std::vector<Node> nodes_;
+    std::vector<Edge> edges_;
+    size_t next_id_;
 };
 
 #endif //CERES_SIMSLAM_GRAPH_H
