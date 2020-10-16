@@ -33,6 +33,8 @@ public:
     const Node& getLastNode() const;
     bool optimise();
     std::string toString() const;
+    std::string nodesToString() const;
+    std::string edgesToString() const;
 private:
     size_t addNode(const Pose& pose);
     void addEdge(size_t start, size_t end, const RelativeMotion& motion);

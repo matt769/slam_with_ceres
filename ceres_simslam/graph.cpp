@@ -98,10 +98,22 @@ bool Graph::optimise() {
 std::string Graph::toString() const {
     std::stringstream ss;
     ss << "Nodes (" << nodes_.size() << "):\n";
+    ss << nodesToString();
+    ss << "Edges (" << edges_.size() << "):\n";
+    ss << edgesToString();
+    return ss.str();
+}
+
+std::string Graph::nodesToString() const {
+    std::stringstream ss;
     for (const auto& node: nodes_) {
         ss << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
     }
-    ss << "Edges (" << edges_.size() << "):\n";
+    return ss.str();
+}
+
+std::string Graph::edgesToString() const {
+    std::stringstream ss;
     for (const auto& edge: edges_) {
         ss << edge.start << ' ' << edge.end << ' ' << edge.relative_motion.p_.transpose() << ' ' << edge.relative_motion.q_.coeffs().transpose() << '\n';
     }
