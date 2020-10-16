@@ -14,14 +14,13 @@ Simulator::Simulator()
     : Simulator(Noise{0.0, 0.0}) {}
 
 Simulator::Simulator(Noise noise)
-        : noise_(noise),
-          noise_generator_(0),
-          noise_distribution_(noise_.mean, noise_.std_dev)
-          {}
+        : noise_generator_(0)
+{
+    setNoise(noise);
+}
 
-void Simulator::setNoise(double mean, double std_dev) {
-    noise_.mean = mean;
-    noise_.std_dev = std_dev;
+void Simulator::setNoise(Noise noise) {
+    noise_ = noise;
     noise_distribution_ = std::normal_distribution<double>(noise_.mean, noise_.std_dev);
 }
 

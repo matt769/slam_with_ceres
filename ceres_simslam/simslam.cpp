@@ -22,6 +22,7 @@ int main(int /*argc*/, char* argv[]) {
     const Eigen::Vector3d left(0.0, 1.0, 0.0);
     const Eigen::Vector3d right = -left;
 
+    Simulator::D
     Simulator::Noise noise{0.0, 0.3};
     Simulator simulator(noise);
     simulator.addFirstNode(Pose());

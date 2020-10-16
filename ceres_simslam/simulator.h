@@ -18,7 +18,7 @@ public:
     };
     Simulator();
     Simulator(Noise noise);
-    void setNoise(double mean, double std_dev);
+    void setNoise(Noise noise);
     void addFirstNode(const Pose& pose);
     void addMotionEdge(const RelativeMotion& motion);
     void addLoopClosure();
