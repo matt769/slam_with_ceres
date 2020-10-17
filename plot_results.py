@@ -4,24 +4,49 @@ import argparse
 import os.path
 
 
+def extract_loop_closures(nodes, edges):
+    # TODO how should this work if I have multiple loop closures?
+    #  loop and plot? or is there some alternating line chart type?
+    # look for loop closures (non-consecutive node indices)
+    loops = list()
+    for edge in edges:
+        if int(edge[0]) + 1 != int(edge[1]):
+            # print(f"Loop closure from {edge[0]} to {edge[1]}")
+            loops.append((nodes[int(edge[0])], nodes[int(edge[1])]))
+    loops_list = list()
+    for loop in loops:
+        loops_list.append(loop[0])
+        loops_list.append(loop[1])
+
+    return loops_list
+
+
+
 def plot_trajectory(directory):
-    true, _ = read_graph(os.path.join(directory, "true_poses.txt"))
-    before, _ = read_graph(os.path.join(directory, "noisy_poses.txt"))
-    after, _ = read_graph(os.path.join(directory, "optimised_poses.txt"))
-    true_xyz = true[:, 1:4]
-    before_xyz = before[:, 1:4]
-    after_xyz = after[:, 1:4]
+    true_nodes, true_edges = read_graph(os.path.join(directory, "true_poses.txt"))
+    before_nodes, before_edges = read_graph(os.path.join(directory, "noisy_poses.txt"))
+    after_nodes, after_edges = read_graph(os.path.join(directory, "optimised_poses.txt"))
+    true_xyz = np.array(true_nodes)[:, 1:4]
+    before_xyz = np.array(before_nodes)[:, 1:4]
+    after_xyz = np.array(after_nodes)[:, 1:4]
+
+    before_loops = extract_loop_closures(before_nodes, before_edges)
+    before_loops_xyz = np.array(before_loops)[:, 1:4]
+    after_loops = extract_loop_closures(after_nodes, after_edges)
+    after_loops_xyz = np.array(after_loops)[:, 1:4]
 
     fig = plt.figure(figsize=plt.figaspect(0.33))
     plt.title('Trajectory')
     ax1 = fig.add_subplot(131, projection='3d')
-    ax1.scatter(true_xyz[:, 0], true_xyz[:, 1], true_xyz[:, 2], c='g', marker='o')
+    ax1.plot(true_xyz[:, 0], true_xyz[:, 1], true_xyz[:, 2], c='g', marker='o')
     ax1.set_title("True")
     ax2 = fig.add_subplot(132, projection='3d')
-    ax2.scatter(before_xyz[:, 0], before_xyz[:, 1], before_xyz[:, 2], c='r', marker='o')
+    ax2.plot(before_xyz[:, 0], before_xyz[:, 1], before_xyz[:, 2], c='r', marker='o')
+    ax2.plot(before_loops_xyz[:, 0], before_loops_xyz[:, 1], before_loops_xyz[:, 2], c='y', marker=None)
     ax2.set_title("Before")
     ax3 = fig.add_subplot(133, projection='3d')
-    ax3.scatter(after_xyz[:, 0], after_xyz[:, 1], after_xyz[:, 2], c='b', marker='o')
+    ax3.plot(after_xyz[:, 0], after_xyz[:, 1], after_xyz[:, 2], c='b', marker='o')
+    ax3.plot(after_loops_xyz[:, 0], after_loops_xyz[:, 1], after_loops_xyz[:, 2], c='y', marker=None)
     ax3.set_title("After")
 
     plt.savefig("plot.jpg")
@@ -49,8 +74,6 @@ def read_graph(filename):
             nodes.append([float(x) for x in line.split()])
         if read_edge:
             edges.append([float(x) for x in line.split()])
-    nodes = np.array(nodes)
-    edges = np.array(edges)
 
     return nodes, edges
 
