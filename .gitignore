@@ -4,3 +4,5 @@ cmake-build*
 build
 plotting_venv
 *.jpg
+
+README.md
