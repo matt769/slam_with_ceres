@@ -4,5 +4,6 @@ cmake-build*
 build
 plotting_venv
 *.jpg
+__pycache__
 
 README.md

@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 import argparse
 import os.path
 
+
 def plot_trajectory(directory):
-    true = np.loadtxt(os.path.join(directory, "true_poses.txt"))
-    before = np.loadtxt(os.path.join(directory, "noisy_poses.txt"))
-    after = np.loadtxt(os.path.join(directory, "optimised_poses.txt"))
+    true, _ = read_graph(os.path.join(directory, "true_poses.txt"))
+    before, _ = read_graph(os.path.join(directory, "noisy_poses.txt"))
+    after, _ = read_graph(os.path.join(directory, "optimised_poses.txt"))
     true_xyz = true[:, 1:4]
     before_xyz = before[:, 1:4]
     after_xyz = after[:, 1:4]
@@ -24,6 +25,34 @@ def plot_trajectory(directory):
     ax3.set_title("After")
 
     plt.savefig("plot.jpg")
+
+
+def read_graph(filename):
+    if not os.path.exists(filename):
+        raise ValueError(f"File does not exist: {filename}")
+
+    nodes = list()
+    edges = list()
+    read_node = False
+    read_edge = False
+    file = open(filename)
+    for line in file.readlines():
+        if not read_node and not read_edge and line[0:5] == "Nodes":
+            read_node = True
+            continue
+        elif read_node and not read_edge and line[0:5] == "Edges":
+            read_node = False
+            read_edge = True
+            continue
+        # else should be a line of data
+        if read_node:
+            nodes.append([float(x) for x in line.split()])
+        if read_edge:
+            edges.append([float(x) for x in line.split()])
+    nodes = np.array(nodes)
+    edges = np.array(edges)
+
+    return nodes, edges
 
 
 if __name__ == "__main__":

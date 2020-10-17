@@ -58,24 +58,18 @@ int main(int /*argc*/, char* argv[]) {
     // output graph current state
     std::ofstream output_file;
     output_file.open("true_poses.txt");
-    for (const auto& node: simulator.getGroundTruth().getNodes()) {
-        output_file << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
-    }
+    output_file << simulator.getGroundTruth().toString();
 
     std::ofstream output_file_noisy;
     output_file_noisy.open("noisy_poses.txt");
-    for (const auto& node: simulator.getGraph().getNodes()) {
-        output_file_noisy << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
-    }
+    output_file_noisy << simulator.getGraph().toString();
 
     simulator.optimiseGraph();
 
     // output graph optimised state
     std::ofstream output_file_opt;
     output_file_opt.open("optimised_poses.txt");
-    for (const auto& node: simulator.getGraph().getNodes()) {
-        output_file_opt << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
-    }
+    output_file_opt << simulator.getGraph().toString();
 
     // compare true and optimised
 
