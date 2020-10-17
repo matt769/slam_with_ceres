@@ -22,9 +22,6 @@ int main(int /*argc*/, char* argv[]) {
     const Eigen::Vector3d left(0.0, 1.0, 0.0);
     const Eigen::Vector3d right = -left;
 
-    //
-//    Eigen::Matrix<double, 6, 1> noise_mean = Eigen::Matrix<double, 6, 1>::Zero();
-//    Eigen::Matrix<double, 6, 1> noise_std_dev = Eigen::Matrix<double, 6, 1>::Zero();
     Simulator::Noise noise;
     noise.mean = Eigen::Matrix<double, 6, 1>::Zero();
     noise.std_dev = Eigen::Matrix<double, 6, 1>::Zero();
