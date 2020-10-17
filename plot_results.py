@@ -13,12 +13,7 @@ def extract_loop_closures(nodes, edges):
         if int(edge[0]) + 1 != int(edge[1]):
             # print(f"Loop closure from {edge[0]} to {edge[1]}")
             loops.append((nodes[int(edge[0])], nodes[int(edge[1])]))
-    loops_list = list()
-    for loop in loops:
-        loops_list.append(loop[0])
-        loops_list.append(loop[1])
-
-    return loops_list
+    return loops
 
 
 
@@ -31,22 +26,32 @@ def plot_trajectory(directory):
     after_xyz = np.array(after_nodes)[:, 1:4]
 
     before_loops = extract_loop_closures(before_nodes, before_edges)
-    before_loops_xyz = np.array(before_loops)[:, 1:4]
     after_loops = extract_loop_closures(after_nodes, after_edges)
-    after_loops_xyz = np.array(after_loops)[:, 1:4]
+
+    def plot_loops(loops, axis):
+        if len(loops) > 0:
+            for loop in loops:
+                loop_chart_data_xyz = list()
+                loop_chart_data_xyz.append(loop[0])
+                loop_chart_data_xyz.append(np.array(loop[1]))
+                loop_chart_data_xyz = np.array(loop_chart_data_xyz)[:, 1:4]
+                axis.plot(loop_chart_data_xyz[:, 0], loop_chart_data_xyz[:, 1], loop_chart_data_xyz[:, 2], c='y', marker=None)
 
     fig = plt.figure(figsize=plt.figaspect(0.33))
     plt.title('Trajectory')
+
     ax1 = fig.add_subplot(131, projection='3d')
     ax1.plot(true_xyz[:, 0], true_xyz[:, 1], true_xyz[:, 2], c='g', marker='o')
     ax1.set_title("True")
+
     ax2 = fig.add_subplot(132, projection='3d')
     ax2.plot(before_xyz[:, 0], before_xyz[:, 1], before_xyz[:, 2], c='r', marker='o')
-    ax2.plot(before_loops_xyz[:, 0], before_loops_xyz[:, 1], before_loops_xyz[:, 2], c='y', marker=None)
+    plot_loops(before_loops, ax2)
     ax2.set_title("Before")
+
     ax3 = fig.add_subplot(133, projection='3d')
     ax3.plot(after_xyz[:, 0], after_xyz[:, 1], after_xyz[:, 2], c='b', marker='o')
-    ax3.plot(after_loops_xyz[:, 0], after_loops_xyz[:, 1], after_loops_xyz[:, 2], c='y', marker=None)
+    plot_loops(after_loops, ax3)
     ax3.set_title("After")
 
     plt.savefig("plot.jpg")
