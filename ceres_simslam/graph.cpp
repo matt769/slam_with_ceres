@@ -73,7 +73,7 @@ bool Graph::optimise() {
     ceres::LocalParameterization* quaternion_local_parameterization = new ceres::EigenQuaternionParameterization;
 
     for (const auto& edge: edges_) {
-        ceres::CostFunction* cost_function = RelativeMotionCost::Create(edge.relative_motion);
+        ceres::CostFunction* cost_function = RelativeMotionCost::Create(edge);
         problem.AddResidualBlock(cost_function, loss_function,
                                  nodes_[edge.start].pose_.p_.data(), nodes_[edge.start].pose_.q_.coeffs().data(),
                                  nodes_[edge.end].pose_.p_.data(), nodes_[edge.end].pose_.q_.coeffs().data());
