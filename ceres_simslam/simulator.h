@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
 
 #include "graph.h"
 #include "pose.h"
@@ -41,6 +40,7 @@ private:
     void setNoise(Noise noise);
     RelativeMotion addNoise(const RelativeMotion& motion);
     RelativeMotion addDrift(const RelativeMotion& motion);
+    Eigen::Matrix<double, 6, 6> toSqrtInfo(const Noise& noise) const;
 };
 
 

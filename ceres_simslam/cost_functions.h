@@ -5,6 +5,9 @@
 #ifndef CERES_SIMSLAM_COST_FUNCTIONS_H
 #define CERES_SIMSLAM_COST_FUNCTIONS_H
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "graph.h"
 #include "pose.h"
 
@@ -49,6 +52,9 @@ public:
         Eigen::Map<Eigen::Matrix<T, 6, 1>> residuals(residuals_ptr);
         residuals.template block<3,1>(0,0) = observed_edge_.relative_motion.p_.template cast<T>() - p_ab; // POSE_GRAPH_3D example has these the other way around??
         residuals.template block<3, 1>(3, 0) = T(2.0) * (observed_edge_.relative_motion.q_.template cast<T>() * q_ab.conjugate()).vec();
+
+        // Weight the residuals by uncertainty
+        residuals.applyOnTheLeft(observed_edge_.sqrt_info.template cast<T>());;
 
         return true;
     }

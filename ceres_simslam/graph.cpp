@@ -21,17 +21,17 @@ void Graph::addFirstNode(const Pose& pose) {
     addNode(pose);
 }
 
-void Graph::addMotionEdge(const RelativeMotion& motion) {
+void Graph::addMotionEdge(const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info) {
     CHECK(next_id_ > 0) << "Graph needs to contain at least 1 node first!";;
     Pose new_pose = nodes_.back().pose_ * motion;
     addNode(new_pose);
-    addEdge(getLastNodeId()-1, getLastNodeId(), motion);
+    addEdge(getLastNodeId()-1, getLastNodeId(), motion, sqrt_info);
 }
 
-void Graph::addLoopClosureEdge(const size_t start, const size_t end, const RelativeMotion& motion) {
+void Graph::addLoopClosureEdge(const size_t start, const size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info) {
     CHECK(start < nodes_.size()) << "Starting node id " << start << " not present in node list!";
     CHECK(end < nodes_.size()) << "Starting node id " << end << " not present in node list!";
-    addEdge(start, end, motion);
+    addEdge(start, end, motion, sqrt_info);
 }
 
 size_t Graph::getLastNodeId() const {
@@ -58,10 +58,10 @@ size_t Graph::addNode(const Pose& pose) {
     return getLastNodeId();
 }
 
-void Graph::addEdge(const size_t start, const size_t end, const RelativeMotion& motion) {
+void Graph::addEdge(const size_t start, const size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info) {
     CHECK(start < nodes_.size()) << "Starting node id " << start << " not present in node list!";
     CHECK(end < nodes_.size()) << "Starting node id " << end << " not present in node list!";
-    edges_.emplace_back(Edge{start, end, motion});
+    edges_.emplace_back(Edge{start, end, motion, sqrt_info});
 }
 
 bool Graph::optimise() {
