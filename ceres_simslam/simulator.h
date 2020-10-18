@@ -14,8 +14,10 @@
 #include "pose.h"
 
 class Simulator {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 public:
     struct Noise {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         Eigen::Matrix<double, 6, 1> mean;
         Eigen::Matrix<double, 6, 1> std_dev;
     };

@@ -13,47 +13,74 @@
 #include "pose.h"
 #include "simulator.h"
 
-int main(int /*argc*/, char* argv[]) {
+struct Args {
+    Simulator::Noise noise;
+    Simulator::Drift drift;
+    enum class LoopClosureLevel {NONE, SINGLE, MANY } loopclosure_level;
+};
+
+Args parseArgs(int argc, char* argv[]);
+
+void printArgs(const Args& args);
+
+int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
 
-    // just move around in xy plane, no rotation
-    const Eigen::Vector3d forward(1.0, 0.0, 0.0);
-    const Eigen::Vector3d backward = -forward;
-    const Eigen::Vector3d left(0.0, 1.0, 0.0);
-    const Eigen::Vector3d right = -left;
+    Args args = parseArgs(argc, argv);
 
-    Simulator::Noise noise;
-    noise.mean = Eigen::Matrix<double, 6, 1>::Zero();
-    noise.std_dev = Eigen::Matrix<double, 6, 1>::Zero();
-    noise.std_dev(0) = 0.2; // x
-    noise.std_dev(1) = 0.2; // y
-    Simulator::Drift drift;
-    drift.p_ = Eigen::Vector3d::Zero();
-    drift.q_ = Eigen::Quaterniond::Identity();
-    Simulator simulator(noise, drift);
+    Simulator simulator(args.noise, args.drift);
     simulator.addFirstNode(Pose());
 
     constexpr size_t steps_fw_bw = 10;
     constexpr size_t steps_left_right = 6;
+    const Eigen::Vector3d forward(1.0, 0.0, 0.0);
+    const Eigen::Quaterniond left_turn = Eigen::Quaterniond(Eigen::AngleAxis(M_PI/2.0, Eigen::Vector3d::UnitZ()));
+    const Eigen::Quaterniond face_forward = Eigen::Quaterniond::Identity();
+    const RelativeMotion forward_motion = RelativeMotion(forward, face_forward);
+    const RelativeMotion forward_and_turn_left = RelativeMotion(forward, left_turn);
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
-        RelativeMotion motion(forward, Eigen::Quaterniond::Identity());
-        simulator.addMotionEdge(motion);
+        if (idx == steps_fw_bw - 1) {
+            simulator.addMotionEdge(forward_and_turn_left);
+        } else {
+            simulator.addMotionEdge(forward_motion);
+        }
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
-        RelativeMotion motion(left, Eigen::Quaterniond::Identity());
-        simulator.addMotionEdge(motion);
+        Eigen::Quaterniond q;
+        if (idx == steps_left_right - 1) {
+            simulator.addMotionEdge(forward_and_turn_left);
+        } else {
+            simulator.addMotionEdge(forward_motion);
+        }
     }
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
-        RelativeMotion motion(backward, Eigen::Quaterniond::Identity());
-        simulator.addMotionEdge(motion);
+        Eigen::Quaterniond q;
+        if (idx == steps_fw_bw - 1) {
+            simulator.addMotionEdge(forward_and_turn_left);
+        } else {
+            simulator.addMotionEdge(forward_motion);
+        }
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
-        RelativeMotion motion(right, Eigen::Quaterniond::Identity());
-        simulator.addMotionEdge(motion);
+        Eigen::Quaterniond q;
+        if (idx == steps_left_right - 1) {
+            simulator.addMotionEdge(forward_and_turn_left);
+        } else {
+            simulator.addMotionEdge(forward_motion);
+        }
     }
 
     // create a loop closure at the end
-    simulator.addLoopClosure();
+    if (args.loopclosure_level == Args::LoopClosureLevel::SINGLE) {
+        simulator.addLoopClosure();
+    }
+    if (args.loopclosure_level == Args::LoopClosureLevel::MANY) {
+        // TODO don't hard code start/end
+        simulator.addLoopClosure();
+        simulator.addLoopClosure(0, 16);
+        simulator.addLoopClosure(10, 26);
+    }
+
 
     // output graph current state
     std::ofstream output_file;
@@ -80,5 +107,86 @@ int main(int /*argc*/, char* argv[]) {
     return 0;
 }
 
-// TODO find out why my static function for generating node ids caused a compilation error
-//  (when filling vector?)
+Args parseArgs(int argc, char* argv[]) {
+    const std::string bad_args_message = "Expecting 3 arguments\n"
+                                   "Include noise, none (0), low (1), high (2)\n"
+                                   "Include drift, none (0), low (1), high (2)\n"
+                                   "Include loop closure, none (0), one (1), many (2)\n"
+                                   "Example call:\n"
+                                   "simslam 1 1 0\n";
+
+    auto printBadArgsAndExit = [&]() {
+        std::cout << bad_args_message;
+        std::cout << "Received arguments:\n";
+        for (int idx = 0; idx < argc; ++idx) {
+            std::cout << idx << ": " << argv[idx] << '\n';
+        }
+        exit(1);
+    };
+
+    if (argc != 4) {
+        printBadArgsAndExit();
+    }
+
+    Args args;
+
+    try {
+        switch (std::stoi(argv[1])) {
+            case 0:
+                args.noise.std_dev = Eigen::Matrix<double, 6, 1>::Zero();
+                break;
+            case 1:
+                args.noise.std_dev << 0.05, 0.05, 0.0, 0.0, 0.0, 0.0;
+                break;
+            case 2:
+                args.noise.std_dev << 0.2, 0.2, 0.0, 0.0, 0.0, 0.0;
+                break;
+            default:
+                std::cout << "Unexpected argument for noise level: " << argv[1] << '\n';
+                printBadArgsAndExit();
+        }
+        args.noise.mean = Eigen::Matrix<double, 6, 1>::Zero();
+
+        Eigen::Vector3d drift_p;
+        Eigen::Quaterniond drift_q;
+        switch (std::stoi(argv[2])) {
+
+            case 0:
+                args.drift = Simulator::Drift();
+                break;
+            case 1:
+                drift_p = Eigen::Vector3d(0.05, 0.05, 0.0);
+                drift_q = Eigen::Quaterniond(Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()));
+                args.drift = Simulator::Drift(drift_p, drift_q);
+                break;
+            case 2:
+                drift_p = Eigen::Vector3d(0.2, 0.2, 0.0);
+                drift_q = Eigen::Quaterniond(Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()));
+                args.drift = Simulator::Drift(drift_p, drift_q);
+                break;
+            default:
+                std::cout << "Unexpected argument for drift level: " << argv[2] << '\n';
+                printBadArgsAndExit();
+        }
+
+        switch (std::stoi(argv[3])) {
+            case 0:
+                args.loopclosure_level = Args::LoopClosureLevel::NONE;
+                break;
+            case 1:
+                args.loopclosure_level = Args::LoopClosureLevel::SINGLE;
+                break;
+            case 2:
+                args.loopclosure_level = Args::LoopClosureLevel::MANY;
+                break;
+            default:
+                std::cout << "Unexpected argument for loop closure level: " << argv[1] << '\n';
+                printBadArgsAndExit();
+        }
+    }
+    catch (...) {
+        printBadArgsAndExit();
+    }
+
+    return args;
+}
