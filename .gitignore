@@ -4,6 +4,7 @@ cmake-build*
 build
 plotting_venv
 *.jpg
+!images/*jpg
 __pycache__
 *.txt
 notes
