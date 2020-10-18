@@ -5,5 +5,5 @@ build
 plotting_venv
 *.jpg
 __pycache__
-
-README.md
+*.txt
+notes
