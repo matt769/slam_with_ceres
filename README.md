@@ -64,3 +64,11 @@ Add some noise as well for a marginal increase in realism.
 ./build/simslam 2 1 2
 ```
 ![](images/plot_4_add_noise.jpg)
+
+## TODO
+Add more (simulated) sensor information...
+ - Absolute orientation constraints from 'IMU'
+ - Gravity vector instead from 'IMU' (i.e. no yaw information)
+ - Absolute position measurements for a few nodes from 'GNSS'
+ - Offset IMU and GNSS measurement frames, and then estimate (refine as part of optimisation)
+ 
