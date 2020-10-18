@@ -18,5 +18,9 @@ add_executable(simslam
         )
 target_link_libraries(simslam ${CERES_LIBRARIES})
 
-add_executable(tests ${PROJECT_NAME}/test.cpp)
+add_executable(tests
+        ${PROJECT_NAME}/test.cpp
+        ${PROJECT_NAME}/graph.cpp
+        ${PROJECT_NAME}/pose.cpp
+        )
 target_link_libraries(tests ${CERES_LIBRARIES})

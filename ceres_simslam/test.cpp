@@ -35,7 +35,7 @@ bool testOptimisation(const RelativeMotion& motion) {
 //    RelativeMotion motion(Eigen::Vector3d::UnitX(), Eigen::Quaterniond::Identity());
     Pose starting_position(motion.p_ * 1.5, Eigen::Quaterniond::Identity());
     Node end {1, starting_position};
-    Edge edge{0, 1, motion};
+    Edge edge{0, 1, motion, Eigen::Matrix<double, 6, 6>::Identity()};
 
     // What is the distance between the two nodes before optimisation
     std::cout << "Observed (true) edge: " << motion.p_.transpose() << '\n';
@@ -46,7 +46,7 @@ bool testOptimisation(const RelativeMotion& motion) {
     ceres::LossFunction* loss_function = nullptr;
     ceres::LocalParameterization* quaternion_local_parameterization = new ceres::EigenQuaternionParameterization;
 
-    ceres::CostFunction* cost_function = RelativeMotionCost::Create(edge.relative_motion);
+    ceres::CostFunction* cost_function = RelativeMotionCost::Create(edge);
     problem.AddResidualBlock(cost_function, loss_function,
                              start.pose_.p_.data(), start.pose_.q_.coeffs().data(),
                              end.pose_.p_.data(), end.pose_.q_.coeffs().data());
