@@ -25,6 +25,11 @@ struct Node {
     Pose pose_;
 };
 
+struct OrientationEdge {
+    Eigen::Quaterniond orientation;
+    Eigen::Matrix<double, 3, 3> sqrt_info;
+};
+
 class Graph {
 public:
     Graph();
