@@ -96,9 +96,9 @@ public:
 
         Eigen::Quaternion<T> delta_q = q * measured_orientation_.orientation.cast<T>();
 
-        // Well create the rotation errors as for the RelativeMotionCost
+        // We'll create the rotation errors as for the RelativeMotionCost
         Eigen::Map<Eigen::Matrix<T, 3, 1>> residuals(residuals_ptr);
-        residuals.template block<3, 1>(3, 0) = T(2.0) * delta_q.vec();
+        residuals.template block<3, 1>(0, 0) = T(2.0) * delta_q.vec();
 
         // Weight the residuals by uncertainty
         residuals.applyOnTheLeft(measured_orientation_.sqrt_info.template cast<T>());;
