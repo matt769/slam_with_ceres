@@ -28,6 +28,11 @@ void Graph::addMotionEdge(const RelativeMotion& motion, const Eigen::Matrix<doub
     addEdge(getLastNodeId()-1, getLastNodeId(), motion, sqrt_info);
 }
 
+void Graph::addOrientationEdge(const Eigen::Quaterniond& measurement, const Eigen::Matrix<double, 3, 3>& sqrt_info) {
+    CHECK(next_id_ > 0) << "Graph needs to contain at least 1 node first!";;
+    orientation_edges_.emplace_back(OrientationEdge{getLastNodeId(), measurement, sqrt_info});
+}
+
 void Graph::addLoopClosureEdge(const size_t start, const size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info) {
     CHECK(start < nodes_.size()) << "Starting node id " << start << " not present in node list!";
     CHECK(end < nodes_.size()) << "Starting node id " << end << " not present in node list!";
@@ -85,6 +90,15 @@ bool Graph::optimise() {
 
     problem.SetParameterBlockConstant(nodes_[0].pose_.p_.data());
     problem.SetParameterBlockConstant(nodes_[0].pose_.q_.coeffs().data());
+    // TODO release fixed first node
+
+    for (const auto& edge: orientation_edges_) {
+        ceres::CostFunction* cost_function = OrientationCost::Create(edge);
+        problem.AddResidualBlock(cost_function, loss_function,
+                                 nodes_[edge.node_id].pose_.q_.coeffs().data());
+        problem.SetParameterization(nodes_[edge.node_id].pose_.q_.coeffs().data(),
+                                    quaternion_local_parameterization);
+    }
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
@@ -101,6 +115,8 @@ std::string Graph::toString() const {
     ss << nodesToString();
     ss << "Edges (" << edges_.size() << "):\n";
     ss << edgesToString();
+//    ss << "OrientationEdges (" << orientation_edges_.size() << "):\n";
+//    ss << orientationEdgesToString();
     return ss.str();
 }
 
@@ -116,6 +132,14 @@ std::string Graph::edgesToString() const {
     std::stringstream ss;
     for (const auto& edge: edges_) {
         ss << edge.start << ' ' << edge.end << ' ' << edge.relative_motion.p_.transpose() << ' ' << edge.relative_motion.q_.coeffs().transpose() << '\n';
+    }
+    return ss.str();
+}
+
+std::string Graph::orientationEdgesToString() const {
+    std::stringstream ss;
+    for (const auto& edge: orientation_edges_) {
+        ss << edge.node_id << ' ' << edge.orientation.coeffs().transpose() << '\n';
     }
     return ss.str();
 }

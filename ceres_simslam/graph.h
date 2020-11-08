@@ -26,6 +26,7 @@ struct Node {
 };
 
 struct OrientationEdge {
+    size_t node_id;
     Eigen::Quaterniond orientation;
     Eigen::Matrix<double, 3, 3> sqrt_info;
 };
@@ -35,6 +36,7 @@ public:
     Graph();
     void addFirstNode(const Pose& pose);
     void addMotionEdge(const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info);
+    void addOrientationEdge(const Eigen::Quaterniond& measurement, const Eigen::Matrix<double, 3, 3>& sqrt_info);
     void addLoopClosureEdge(size_t start, size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info);
     size_t getLastNodeId() const;
     const Node& getNode(size_t node_id) const;
@@ -44,11 +46,13 @@ public:
     std::string toString() const;
     std::string nodesToString() const;
     std::string edgesToString() const;
+    std::string orientationEdgesToString() const;
 private:
     size_t addNode(const Pose& pose);
     void addEdge(size_t start, size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info);
     std::vector<Node> nodes_;
     std::vector<Edge> edges_;
+    std::vector<OrientationEdge> orientation_edges_;
     size_t next_id_;
 };
 
