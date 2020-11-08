@@ -18,7 +18,7 @@ using namespace pose;
 using namespace graph;
 
 Simulator::Simulator()
-    : Simulator(Noise{Eigen::Matrix<double, 6, 1>::Zero(), Eigen::Matrix<double, 6, 1>::Zero()}, Drift()) {}
+    : Simulator(Noise{Eigen::Matrix<double, 6, 1>::Zero(), Eigen::Matrix<double, 6, 1>::Zero(), 0.0, 0.0}, Drift()) {}
 
 Simulator::Simulator(Noise noise, Drift drift)
         : drift_(drift), noise_generator_(0)
@@ -31,7 +31,7 @@ Simulator::Simulator(Noise noise, Drift drift)
 void Simulator::setNoise(Noise noise) {
     noise_ = noise;
     for (size_t idx = 0; idx < 6; ++idx) {
-        noise_distribution_[idx] = std::normal_distribution<double>(noise_.mean(idx), noise_.std_dev(idx));
+        noise_distribution_[idx] = std::normal_distribution<double>(noise_.relative_motion.mean(idx), noise_.relative_motion.std_dev(idx));
     }
 }
 
@@ -92,8 +92,7 @@ RelativeMotion Simulator::addNoise(const RelativeMotion& motion) {
 
 Eigen::Quaterniond Simulator::addNoise(const Eigen::Quaterniond& rotation) {
     Eigen::Quaterniond noisy_rotation = rotation;
-    constexpr double angle_stdev = 0.0; // TODO define elsewhere and/or parameterise
-    noisy_rotation *= generateRandomRotation(angle_stdev);
+    noisy_rotation *= generateRandomRotation(noise_.orientation.std_dev);
     return noisy_rotation;
 }
 
@@ -116,7 +115,7 @@ Eigen::Matrix<double, 6, 6> Simulator::toSqrtInfo(const Noise& noise) const {
     // not sure if this is really the right approach but
     // because we can have zero noise, need to be able to 'invert' a matrix of zeros
     // So just add identity to the noise
-    Eigen::Matrix<double, 6, 1> modified_noise = noise.std_dev + Eigen::Matrix<double, 6, 1>::Ones();
+    Eigen::Matrix<double, 6, 1> modified_noise = noise.relative_motion.std_dev + Eigen::Matrix<double, 6, 1>::Ones();
     return modified_noise.asDiagonal().toDenseMatrix().sqrt();
 }
 

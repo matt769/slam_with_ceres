@@ -144,19 +144,23 @@ Args parseArgs(int argc, char* argv[]) {
     try {
         switch (std::stoi(argv[1])) {
             case 0:
-                args.noise.std_dev = Eigen::Matrix<double, 6, 1>::Zero();
+                args.noise.relative_motion.std_dev = Eigen::Matrix<double, 6, 1>::Zero();
+                args.noise.orientation.std_dev = 0.0;
                 break;
             case 1:
-                args.noise.std_dev << 0.05, 0.05, 0.0, 0.0, 0.0, 0.0;
+                args.noise.relative_motion.std_dev << 0.05, 0.05, 0.0, 0.0, 0.0, 0.0;
+                args.noise.orientation.std_dev = 0.01;
                 break;
             case 2:
-                args.noise.std_dev << 0.2, 0.2, 0.0, 0.0, 0.0, 0.0;
+                args.noise.relative_motion.std_dev << 0.2, 0.2, 0.0, 0.0, 0.0, 0.0;
+                args.noise.orientation.std_dev = 0.1;
                 break;
             default:
                 std::cout << "Unexpected argument for noise level: " << argv[1] << '\n';
                 printBadArgsAndExit();
         }
-        args.noise.mean = Eigen::Matrix<double, 6, 1>::Zero();
+        args.noise.relative_motion.mean = Eigen::Matrix<double, 6, 1>::Zero();
+        args.noise.orientation.mean = 0.0;
 
         Eigen::Vector3d drift_p;
         Eigen::Quaterniond drift_q;

@@ -16,9 +16,15 @@
 namespace simulator {
 
 struct Noise {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Eigen::Matrix<double, 6, 1> mean;
-    Eigen::Matrix<double, 6, 1> std_dev;
+    struct RelativeMotion {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        Eigen::Matrix<double, 6, 1> mean;
+        Eigen::Matrix<double, 6, 1> std_dev;
+    } relative_motion;
+    struct Orientation {
+        double mean;
+        double std_dev;
+    } orientation;
 };
 
 typedef pose::Pose Drift;
