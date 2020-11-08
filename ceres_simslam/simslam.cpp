@@ -38,12 +38,18 @@ int main(int argc, char* argv[]) {
     const Eigen::Quaterniond face_forward = Eigen::Quaterniond::Identity();
     const RelativeMotion forward_motion = RelativeMotion(forward, face_forward);
     const RelativeMotion forward_and_turn_left = RelativeMotion(forward, left_turn);
+
+    // let's say the fixed frame we observe with our orientation measurements is identity for now
+    const Eigen::Quaterniond fixed_frame = Eigen::Quaterniond::Identity();
+    simulator.setMeasurableFixedFrame(fixed_frame);
+
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
         if (idx == steps_fw_bw - 1) {
             simulator.addMotionEdge(forward_and_turn_left);
         } else {
             simulator.addMotionEdge(forward_motion);
         }
+        simulator.addOrientationEdge();
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
         Eigen::Quaterniond q;
@@ -52,6 +58,7 @@ int main(int argc, char* argv[]) {
         } else {
             simulator.addMotionEdge(forward_motion);
         }
+        simulator.addOrientationEdge();
     }
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
         Eigen::Quaterniond q;
@@ -60,6 +67,7 @@ int main(int argc, char* argv[]) {
         } else {
             simulator.addMotionEdge(forward_motion);
         }
+        simulator.addOrientationEdge();
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
         Eigen::Quaterniond q;
@@ -68,6 +76,7 @@ int main(int argc, char* argv[]) {
         } else {
             simulator.addMotionEdge(forward_motion);
         }
+        simulator.addOrientationEdge();
     }
 
     // create a loop closure at the end
@@ -80,7 +89,6 @@ int main(int argc, char* argv[]) {
         simulator.addLoopClosure(0, 16);
         simulator.addLoopClosure(10, 26);
     }
-
 
     // output graph current state
     std::ofstream output_file;
