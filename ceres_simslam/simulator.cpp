@@ -99,7 +99,7 @@ RelativeMotion Simulator::addNoise(const RelativeMotion& motion) {
     noisy_motion.p_.x() += noise_distribution_[0](noise_generator_);
     noisy_motion.p_.y() += noise_distribution_[1](noise_generator_);
     noisy_motion.p_.z() += noise_distribution_[2](noise_generator_);
-    // TODO add noise quaternion
+    noisy_motion.q_ *= generateRandomRotation(noise_.relative_motion.std_dev[3]);
     return noisy_motion;
 }
 
