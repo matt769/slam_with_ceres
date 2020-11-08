@@ -22,6 +22,7 @@ Simulator::Simulator(Noise noise, Drift drift)
 {
     noise_distribution_.reserve(6);
     setNoise(noise);
+    setMeasurableFixedFrame(Eigen::Quaterniond::Identity());
 }
 
 void Simulator::setNoise(Noise noise) {
@@ -41,6 +42,13 @@ void Simulator::addMotionEdge(const RelativeMotion& motion) {
     graph_.addMotionEdge(addNoise(addDrift(motion)), toSqrtInfo(noise_));
 }
 
+void Simulator::addOrientationEdge() {
+    // q_node_fixedframe =  inverse(q_world_node) * q_world_fixedframe
+    const Eigen::Quaterniond measurement = ground_truth_.getLastNode().pose_.q_.conjugate() * measurable_fixed_frame_;
+    ground_truth_.addOrientationEdge(measurement, Eigen::Matrix<double, 3, 3>::Identity());
+    graph_.addOrientationEdge(addNoise(measurement), Eigen::Matrix<double, 3, 3>::Identity());
+}
+
 void Simulator::addLoopClosure() {
     // atm fixed to be a beginning/end loop closure
     addLoopClosure(ground_truth_.getLastNodeId(), 0);
@@ -58,6 +66,10 @@ void Simulator::addLoopClosure(const size_t start, const size_t end) {
     graph_.addLoopClosureEdge(loop_start_node_gt.id_, loop_end_node_gt.id_, T_end_start_noisy, toSqrtInfo(noise_));
 }
 
+void Simulator::setMeasurableFixedFrame(const Eigen::Quaterniond& q) {
+    measurable_fixed_frame_ = q;
+}
+
 bool Simulator::optimiseGraph() {
     return graph_.optimise();
 }
@@ -73,6 +85,13 @@ RelativeMotion Simulator::addNoise(const RelativeMotion& motion) {
     noisy_motion.p_.z() += noise_distribution_[2](noise_generator_);
     // TODO add noise quaternion
     return noisy_motion;
+}
+
+Eigen::Quaterniond Simulator::addNoise(const Eigen::Quaterniond& rotation) {
+    Eigen::Quaterniond noisy_rotation = rotation;
+    constexpr double angle_stdev = 0.0; // TODO define elsewhere and/or parameterise
+    noisy_rotation *= generateRandomRotation(angle_stdev);
+    return noisy_rotation;
 }
 
 RelativeMotion Simulator::addDrift(const RelativeMotion& motion) {
@@ -96,4 +115,12 @@ Eigen::Matrix<double, 6, 6> Simulator::toSqrtInfo(const Noise& noise) const {
     // So just add identity to the noise
     Eigen::Matrix<double, 6, 1> modified_noise = noise.std_dev + Eigen::Matrix<double, 6, 1>::Ones();
     return modified_noise.asDiagonal().toDenseMatrix().sqrt();
+}
+
+Eigen::Quaterniond Simulator::generateRandomRotation(const double angle_stddev) {
+    Eigen::Vector3d axis;
+    axis.setRandom().normalize();
+    auto distribution = std::normal_distribution<double>(0.0, angle_stddev);
+    double angle = distribution(noise_generator_);
+    return Eigen::Quaterniond(Eigen::AngleAxisd(angle, axis));
 }
