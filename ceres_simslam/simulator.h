@@ -64,6 +64,7 @@ private:
     std::default_random_engine noise_generator_;
     std::vector<std::normal_distribution<double>> noise_distribution_;
     Eigen::Quaterniond measurable_fixed_frame_;
+    Eigen::Matrix<double, 3, 3> orientation_sqrt_info_;
 
     void setNoise(Noise noise);
 

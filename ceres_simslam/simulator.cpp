@@ -25,6 +25,12 @@ Simulator::Simulator(Noise noise, Drift drift)
 {
     noise_distribution_.reserve(6);
     setNoise(noise);
+
+    Eigen::Matrix<double, 3, 3> orientation_cov = Eigen::Matrix<double, 3, 3>::Zero();
+    orientation_cov.diagonal() = Eigen::Vector3d(noise_.orientation.std_dev, noise_.orientation.std_dev, noise_.orientation.std_dev);
+    orientation_cov = orientation_cov + Eigen::Matrix<double, 3, 3>::Identity();
+    orientation_sqrt_info_ = orientation_cov.inverse().sqrt();
+
     setMeasurableFixedFrame(Eigen::Quaterniond::Identity());
 }
 
@@ -49,7 +55,7 @@ void Simulator::addOrientationEdge() {
     // q_node_fixedframe =  inverse(q_world_node) * q_world_fixedframe
     const Eigen::Quaterniond measurement = ground_truth_.getLastNode().pose_.q_.conjugate() * measurable_fixed_frame_;
     ground_truth_.addOrientationEdge(measurement, Eigen::Matrix<double, 3, 3>::Identity());
-    graph_.addOrientationEdge(addNoise(measurement), Eigen::Matrix<double, 3, 3>::Identity());
+    graph_.addOrientationEdge(addNoise(measurement), orientation_sqrt_info_);
 }
 
 void Simulator::addLoopClosure() {
