@@ -33,6 +33,12 @@ struct OrientationEdge {
     Eigen::Matrix<double, 3, 3> sqrt_info;
 };
 
+struct GravityEdge {
+    size_t node_id;
+    Eigen::Vector3d gravity_vector;
+    Eigen::Matrix<double, 3, 3> sqrt_info;
+};
+
 class Graph {
 public:
     Graph();
