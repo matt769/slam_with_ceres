@@ -31,6 +31,13 @@ Simulator::Simulator(Noise noise, Drift drift)
     orientation_cov = orientation_cov + Eigen::Matrix<double, 3, 3>::Identity();
     orientation_sqrt_info_ = orientation_cov.inverse().sqrt();
 
+    Eigen::Matrix<double, 6, 6> relative_motion_cov = Eigen::Matrix<double, 6, 6>::Zero();
+    relative_motion_cov.diagonal() << noise_.relative_motion.std_dev, noise_.relative_motion.std_dev,
+                                        noise_.relative_motion.std_dev, noise_.relative_motion.std_dev,
+                                        noise_.relative_motion.std_dev, noise_.relative_motion.std_dev;
+    relative_motion_cov = relative_motion_cov + Eigen::Matrix<double, 6, 6>::Identity();
+    relative_motion_sqrt_info_ = relative_motion_cov.inverse().sqrt();
+
     setMeasurableFixedFrame(Eigen::Quaterniond::Identity());
 }
 
@@ -48,7 +55,7 @@ void Simulator::addFirstNode(const Pose& pose) {
 
 void Simulator::addMotionEdge(const RelativeMotion& motion) {
     ground_truth_.addMotionEdge(motion, Eigen::Matrix<double, 6, 6>::Identity());
-    graph_.addMotionEdge(addNoise(addDrift(motion)), toSqrtInfo(noise_));
+    graph_.addMotionEdge(addNoise(addDrift(motion)), relative_motion_sqrt_info_);
 }
 
 void Simulator::addOrientationEdge() {
@@ -72,7 +79,7 @@ void Simulator::addLoopClosure(const size_t start, const size_t end) {
     ground_truth_.addLoopClosureEdge(loop_start_node_gt.id_, loop_end_node_gt.id_, loop_pseudo_motion, Eigen::Matrix<double, 6, 6>::Identity());
     // then add noise
     RelativeMotion T_end_start_noisy = addNoise(loop_pseudo_motion);
-    graph_.addLoopClosureEdge(loop_start_node_gt.id_, loop_end_node_gt.id_, T_end_start_noisy, toSqrtInfo(noise_));
+    graph_.addLoopClosureEdge(loop_start_node_gt.id_, loop_end_node_gt.id_, T_end_start_noisy, relative_motion_sqrt_info_);
 }
 
 void Simulator::setMeasurableFixedFrame(const Eigen::Quaterniond& q) {

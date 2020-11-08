@@ -65,6 +65,7 @@ private:
     std::vector<std::normal_distribution<double>> noise_distribution_;
     Eigen::Quaterniond measurable_fixed_frame_;
     Eigen::Matrix<double, 3, 3> orientation_sqrt_info_;
+    Eigen::Matrix<double, 6, 6> relative_motion_sqrt_info_;
 
     void setNoise(Noise noise);
 
