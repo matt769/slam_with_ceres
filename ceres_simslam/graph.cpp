@@ -13,27 +13,31 @@
 #include "pose.h"
 #include "cost_functions.h"
 
+namespace graph {
+using namespace pose;
 
 Graph::Graph() : next_id_(0) {}
 
-void Graph::addFirstNode(const Pose& pose) {
+void Graph::addFirstNode(const Pose &pose) {
     CHECK(next_id_ == 0) << "Graph already contains " << next_id_ - 1 << " nodes!";;
     addNode(pose);
 }
 
-void Graph::addMotionEdge(const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info) {
+void Graph::addMotionEdge(const RelativeMotion &motion, const Eigen::Matrix<double, 6, 6> &sqrt_info) {
     CHECK(next_id_ > 0) << "Graph needs to contain at least 1 node first!";;
     Pose new_pose = nodes_.back().pose_ * motion;
     addNode(new_pose);
-    addEdge(getLastNodeId()-1, getLastNodeId(), motion, sqrt_info);
+    addEdge(getLastNodeId() - 1, getLastNodeId(), motion, sqrt_info);
 }
 
-void Graph::addOrientationEdge(const Eigen::Quaterniond& measurement, const Eigen::Matrix<double, 3, 3>& sqrt_info) {
+void
+Graph::addOrientationEdge(const Eigen::Quaterniond &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info) {
     CHECK(next_id_ > 0) << "Graph needs to contain at least 1 node first!";;
     orientation_edges_.emplace_back(OrientationEdge{getLastNodeId(), measurement, sqrt_info});
 }
 
-void Graph::addLoopClosureEdge(const size_t start, const size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info) {
+void Graph::addLoopClosureEdge(const size_t start, const size_t end, const RelativeMotion &motion,
+                               const Eigen::Matrix<double, 6, 6> &sqrt_info) {
     CHECK(start < nodes_.size()) << "Starting node id " << start << " not present in node list!";
     CHECK(end < nodes_.size()) << "Starting node id " << end << " not present in node list!";
     addEdge(start, end, motion, sqrt_info);
@@ -44,26 +48,27 @@ size_t Graph::getLastNodeId() const {
     return next_id_ - 1;
 }
 
-const Node& Graph::getNode(const size_t node_id) const {
+const Node &Graph::getNode(const size_t node_id) const {
     CHECK(next_id_ > 0) << "Graph is empty!";
     CHECK(node_id < nodes_.size()) << "Node id " << node_id << " not present in node list!";
     return nodes_[node_id];
 }
 
-const std::vector<Node>& Graph::getNodes() const {
+const std::vector<Node> &Graph::getNodes() const {
     return nodes_;
 }
 
-const Node& Graph::getLastNode() const {
+const Node &Graph::getLastNode() const {
     return nodes_[getLastNodeId()];
 }
 
-size_t Graph::addNode(const Pose& pose) {
+size_t Graph::addNode(const Pose &pose) {
     nodes_.emplace_back(Node{next_id_++, pose});
     return getLastNodeId();
 }
 
-void Graph::addEdge(const size_t start, const size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info) {
+void Graph::addEdge(const size_t start, const size_t end, const RelativeMotion &motion,
+                    const Eigen::Matrix<double, 6, 6> &sqrt_info) {
     CHECK(start < nodes_.size()) << "Starting node id " << start << " not present in node list!";
     CHECK(end < nodes_.size()) << "Starting node id " << end << " not present in node list!";
     edges_.emplace_back(Edge{start, end, motion, sqrt_info});
@@ -74,11 +79,11 @@ bool Graph::optimise() {
     CHECK(next_id_ != 1) << "Graph only contains a single node!";
 
     ceres::Problem problem;
-    ceres::LossFunction* loss_function = nullptr;
-    ceres::LocalParameterization* quaternion_local_parameterization = new ceres::EigenQuaternionParameterization;
+    ceres::LossFunction *loss_function = nullptr;
+    ceres::LocalParameterization *quaternion_local_parameterization = new ceres::EigenQuaternionParameterization;
 
-    for (const auto& edge: edges_) {
-        ceres::CostFunction* cost_function = RelativeMotionCost::Create(edge);
+    for (const auto &edge: edges_) {
+        ceres::CostFunction *cost_function = RelativeMotionCost::Create(edge);
         problem.AddResidualBlock(cost_function, loss_function,
                                  nodes_[edge.start].pose_.p_.data(), nodes_[edge.start].pose_.q_.coeffs().data(),
                                  nodes_[edge.end].pose_.p_.data(), nodes_[edge.end].pose_.q_.coeffs().data());
@@ -92,8 +97,8 @@ bool Graph::optimise() {
     problem.SetParameterBlockConstant(nodes_[0].pose_.q_.coeffs().data());
     // TODO release fixed first node
 
-    for (const auto& edge: orientation_edges_) {
-        ceres::CostFunction* cost_function = OrientationCost::Create(edge);
+    for (const auto &edge: orientation_edges_) {
+        ceres::CostFunction *cost_function = OrientationCost::Create(edge);
         problem.AddResidualBlock(cost_function, loss_function,
                                  nodes_[edge.node_id].pose_.q_.coeffs().data());
         problem.SetParameterization(nodes_[edge.node_id].pose_.q_.coeffs().data(),
@@ -122,7 +127,7 @@ std::string Graph::toString() const {
 
 std::string Graph::nodesToString() const {
     std::stringstream ss;
-    for (const auto& node: nodes_) {
+    for (const auto &node: nodes_) {
         ss << node.id_ << ' ' << node.pose_.p_.transpose() << ' ' << node.pose_.q_.coeffs().transpose() << '\n';
     }
     return ss.str();
@@ -130,16 +135,19 @@ std::string Graph::nodesToString() const {
 
 std::string Graph::edgesToString() const {
     std::stringstream ss;
-    for (const auto& edge: edges_) {
-        ss << edge.start << ' ' << edge.end << ' ' << edge.relative_motion.p_.transpose() << ' ' << edge.relative_motion.q_.coeffs().transpose() << '\n';
+    for (const auto &edge: edges_) {
+        ss << edge.start << ' ' << edge.end << ' ' << edge.relative_motion.p_.transpose() << ' '
+           << edge.relative_motion.q_.coeffs().transpose() << '\n';
     }
     return ss.str();
 }
 
 std::string Graph::orientationEdgesToString() const {
     std::stringstream ss;
-    for (const auto& edge: orientation_edges_) {
+    for (const auto &edge: orientation_edges_) {
         ss << edge.node_id << ' ' << edge.orientation.coeffs().transpose() << '\n';
     }
     return ss.str();
 }
+
+} // namespace graph

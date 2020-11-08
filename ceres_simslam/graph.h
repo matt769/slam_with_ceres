@@ -12,17 +12,19 @@
 
 #include "pose.h"
 
+namespace graph {
+
 struct Edge {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     size_t start;
     size_t end;
-    RelativeMotion relative_motion;
+    pose::RelativeMotion relative_motion;
     Eigen::Matrix<double, 6, 6> sqrt_info;
 };
 
 struct Node {
     size_t id_;
-    Pose pose_;
+    pose::Pose pose_;
 };
 
 struct OrientationEdge {
@@ -34,26 +36,46 @@ struct OrientationEdge {
 class Graph {
 public:
     Graph();
-    void addFirstNode(const Pose& pose);
-    void addMotionEdge(const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info);
-    void addOrientationEdge(const Eigen::Quaterniond& measurement, const Eigen::Matrix<double, 3, 3>& sqrt_info);
-    void addLoopClosureEdge(size_t start, size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info);
+
+    void addFirstNode(const pose::Pose &pose);
+
+    void addMotionEdge(const pose::RelativeMotion &motion, const Eigen::Matrix<double, 6, 6> &sqrt_info);
+
+    void addOrientationEdge(const Eigen::Quaterniond &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info);
+
+    void addLoopClosureEdge(size_t start, size_t end, const pose::RelativeMotion &motion,
+                            const Eigen::Matrix<double, 6, 6> &sqrt_info);
+
     size_t getLastNodeId() const;
-    const Node& getNode(size_t node_id) const;
-    const std::vector<Node>& getNodes() const;
-    const Node& getLastNode() const;
+
+    const Node &getNode(size_t node_id) const;
+
+    const std::vector<Node> &getNodes() const;
+
+    const Node &getLastNode() const;
+
     bool optimise();
+
     std::string toString() const;
+
     std::string nodesToString() const;
+
     std::string edgesToString() const;
+
     std::string orientationEdgesToString() const;
+
 private:
-    size_t addNode(const Pose& pose);
-    void addEdge(size_t start, size_t end, const RelativeMotion& motion, const Eigen::Matrix<double, 6, 6>& sqrt_info);
+    size_t addNode(const pose::Pose &pose);
+
+    void
+    addEdge(size_t start, size_t end, const pose::RelativeMotion &motion, const Eigen::Matrix<double, 6, 6> &sqrt_info);
+
     std::vector<Node> nodes_;
     std::vector<Edge> edges_;
     std::vector<OrientationEdge> orientation_edges_;
     size_t next_id_;
 };
+
+} // namespace graph
 
 #endif //CERES_SIMSLAM_GRAPH_H

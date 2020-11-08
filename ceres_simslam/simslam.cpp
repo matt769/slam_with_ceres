@@ -13,6 +13,9 @@
 #include "pose.h"
 #include "simulator.h"
 
+using namespace pose;
+using namespace simulator;
+
 struct Args {
     Simulator::Noise noise;
     Simulator::Drift drift;

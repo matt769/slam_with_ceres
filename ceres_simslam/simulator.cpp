@@ -13,6 +13,9 @@
 #include "pose.h"
 #include "graph.h"
 
+namespace simulator {
+using namespace pose;
+using namespace graph;
 
 Simulator::Simulator()
     : Simulator(Noise{Eigen::Matrix<double, 6, 1>::Zero(), Eigen::Matrix<double, 6, 1>::Zero()}, Drift()) {}
@@ -124,3 +127,5 @@ Eigen::Quaterniond Simulator::generateRandomRotation(const double angle_stddev) 
     double angle = distribution(noise_generator_);
     return Eigen::Quaterniond(Eigen::AngleAxisd(angle, axis));
 }
+
+} // namespace simulator

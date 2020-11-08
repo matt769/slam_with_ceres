@@ -20,7 +20,7 @@
 class RelativeMotionCost {
 public:
     //  The observed edge is the observed position of the second pose represented in the frame of the first
-    RelativeMotionCost(const Edge& observed_edge)
+    RelativeMotionCost(const graph::Edge& observed_edge)
         : observed_edge_(observed_edge) {}
 
     // This function takes in T[3] position T[4] quaternion for each pose
@@ -61,13 +61,13 @@ public:
     // So that we don't need to specify all the template parameters etc when we use this, follow the
     //  existing convention and create a convenience function to return us the CostFunction object (pointer) we need
     // Slightly oddly, the first non-type template parameter is the size of the output/residual array
-    static ceres::CostFunction* Create(const Edge& observed_edge) {
+    static ceres::CostFunction* Create(const graph::Edge& observed_edge) {
         return (new ceres::AutoDiffCostFunction<RelativeMotionCost, 6, 3, 4, 3, 4>(
                 new RelativeMotionCost(observed_edge)));
     }
 
 private:
-    Edge observed_edge_;
+    graph::Edge observed_edge_;
 };
 
 
@@ -75,7 +75,7 @@ class OrientationCost {
 public:
     //  The measurement is the orientation of a fixed frame (e.g. inertial) from a node
     //
-    OrientationCost(const OrientationEdge& measured_orientation)
+    OrientationCost(const graph::OrientationEdge& measured_orientation)
             : measured_orientation_(measured_orientation) {}
 
     // This function takes in a T[4] quaternion for the pose of the node
@@ -106,13 +106,13 @@ public:
         return true;
     }
 
-    static ceres::CostFunction* Create(const OrientationEdge& measured_orientation) {
+    static ceres::CostFunction* Create(const graph::OrientationEdge& measured_orientation) {
         return (new ceres::AutoDiffCostFunction<OrientationCost, 3, 4>(
                 new OrientationCost(measured_orientation)));
     }
 
 private:
-    OrientationEdge measured_orientation_;
+    graph::OrientationEdge measured_orientation_;
 };
 
 
