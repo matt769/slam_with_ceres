@@ -65,10 +65,17 @@ Add some noise as well for a marginal increase in realism.
 ```
 ![](images/plot_4_add_noise.jpg)
 
+Now add orientation edges (not visualised) at each node
+![](images/plot_5_with_orientation_edges.jpg)
+
+
 ## TODO
 Add more (simulated) sensor information...
- - Absolute orientation constraints from 'IMU'
  - Gravity vector instead from 'IMU' (i.e. no yaw information)
  - Absolute position measurements for a few nodes from 'GNSS'
  - Offset IMU and GNSS measurement frames, and then estimate (refine as part of optimisation)
+ - Nicer input arguments!
+ - Tidy noise generation parts
+ - More sensible covariance/information matrix values
+ - Allow visualisation of other edges (may want to change visualisation approach entirely)
  

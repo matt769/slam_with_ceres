@@ -17,8 +17,8 @@ using namespace pose;
 using namespace simulator;
 
 struct Args {
-    Simulator::Noise noise;
-    Simulator::Drift drift;
+    simulator::Noise noise;
+    simulator::Drift drift;
     enum class LoopClosureLevel {NONE, SINGLE, MANY } loopclosure_level;
 };
 
@@ -163,17 +163,17 @@ Args parseArgs(int argc, char* argv[]) {
         switch (std::stoi(argv[2])) {
 
             case 0:
-                args.drift = Simulator::Drift();
+                args.drift = simulator::Drift();
                 break;
             case 1:
                 drift_p = Eigen::Vector3d(0.05, 0.05, 0.0);
                 drift_q = Eigen::Quaterniond(Eigen::AngleAxisd(0.05, Eigen::Vector3d::UnitZ()));
-                args.drift = Simulator::Drift(drift_p, drift_q);
+                args.drift = simulator::Drift(drift_p, drift_q);
                 break;
             case 2:
                 drift_p = Eigen::Vector3d(0.2, 0.2, 0.0);
                 drift_q = Eigen::Quaterniond(Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()));
-                args.drift = Simulator::Drift(drift_p, drift_q);
+                args.drift = simulator::Drift(drift_p, drift_q);
                 break;
             default:
                 std::cout << "Unexpected argument for drift level: " << argv[2] << '\n';
