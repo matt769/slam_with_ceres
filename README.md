@@ -34,39 +34,63 @@ python plot_results.py ./build
 With no noise, drift or loop closures.  
 The initial state of the trjaectory is exactly the true trajectory, and there is noting for the optimiser to do.
 ```shell script
-./build/simslam 0 0 0
+./build/simslam 0 0 0 0
 ```
-![](images/plot_0_no_noise.jpg)
+![](images/plot0000.jpg)
 
 With a little drift.  
-Now the initial values of the nodes in the trajectory are not correct (except the first), and the end position is clearly well off where it should be. In this case the only information available in the optimisation is a linear sequence of odometry measurements which is all self-consistent i.e. there's no other information to contradict the odometry, which is why the optimisation cannot fix this.
+Now the initial values of the nodes in the trajectory are not correct (except the first), and the end position is clearly well off where it should be. 
+In this case the only information available in the optimisation is a linear sequence of odometry measurements which is all self-consistent i.e. there's no other information to contradict the odometry, which is why the optimisation cannot fix this.
 ```shell script
-./build/simslam 0 1 0
+./build/simslam 0 1 0 0
 ```
-![](images/plot_1_drift.jpg)
+![](images/plot0100.jpg)
 
 With drift and a loop closure observation (yellow line) between the start and end of the trajectory.  
 Now we have an additional measurement between the start and end of the trajectory that is inconsistent with the odometry information. The optimisation is now able to 'correct' the errors in odometry. However, some 'warping' of the true trajectory remains (due to drift error in the translation element of the odometry measurement) which the single loop closure cannot fix, because it provides no additional information about the rest of the trajectory.   
 ```shell script
-./build/simslam 0 1 1
+./build/simslam 0 1 1 0
 ```
-![](images/plot_2_drift_1_loop.jpg)
+![](images/plot0110.jpg)
 
 With a few more loop closures.  
 Now the warping is fixed - of course in practice it may not always be possible to generate such constraints exactly where we want.
 ```shell script
-./build/simslam 0 1 2
+./build/simslam 0 1 2 0
 ```
-![](images/plot_3_drift_more_loops.jpg)
+![](images/plot0120.jpg)
 
-Add some noise as well for a marginal increase in realism.
+Add some noise as well for a marginal increase in realism. This only adds noise to the x and y components of the relative motion.
 ```shell script
-./build/simslam 2 1 2
+./build/simslam 1 1 2 0
 ```
-![](images/plot_4_add_noise.jpg)
+![](images/plot1120.jpg)
 
-Now add orientation edges (not visualised) at each node
-![](images/plot_5_with_orientation_edges.jpg)
+Add noise to all components of the relative motions (translational and rotational).
+```shell script
+./build/simslam 2 1 2 0
+```
+![](images/plot2120.jpg)
+
+Increase the noise! These (deliberately convenient) loop closures are quite effective.
+```shell script
+./build/simslam 3 1 2 0
+```
+![](images/plot3120.jpg)
+
+Adding orientation edges to each node can also improve the optimised trajectory. 
+This is some measurement of absolute orientation e.g. as we might get from an IMU (including magnetometer for heading).
+In this example loop closure is removed completely.
+```shell script
+./build/simslam 0 1 0 1
+```
+![](images/plot0101.jpg)
+
+It's quite effective even when there is a lot of noise on the relative motion and orientation measurements.
+```shell script
+./build/simslam 3 1 0 1
+```
+![](images/plot3101.jpg)
 
 
 ## TODO
@@ -78,4 +102,5 @@ Add more (simulated) sensor information...
  - Tidy noise generation parts
  - More sensible covariance/information matrix values
  - Allow visualisation of other edges (may want to change visualisation approach entirely)
+ - Qualitative evaluation of optimised results vs ground truth
  
