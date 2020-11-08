@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
 
 Args parseArgs(int argc, char* argv[]) {
     const std::string bad_args_message = "Expecting 4 arguments\n"
-                                   "Include noise, none (0), low (1), high (2)\n"
+                                   "Include noise, none (0), motion xy only (1), motion all (2), more! (3)\n"
                                    "Include drift, none (0), low (1), high (2)\n"
                                    "Include loop closure, none (0), one (1), many (2)\n"
                                    "Include orientation edges, no (0), yes (1)\n"
@@ -150,10 +150,14 @@ Args parseArgs(int argc, char* argv[]) {
                 args.noise.orientation.std_dev = 0.0;
                 break;
             case 1:
-                args.noise.relative_motion.std_dev << 0.05, 0.05, 0.01, 0.01, 0.01, 0.01;
+                args.noise.relative_motion.std_dev << 0.05, 0.05, 0.0, 0.0, 0.0, 0.0;
                 args.noise.orientation.std_dev = 0.01;
                 break;
             case 2:
+                args.noise.relative_motion.std_dev << 0.05, 0.05, 0.01, 0.01, 0.01, 0.01;
+                args.noise.orientation.std_dev = 0.01;
+                break;
+            case 3:
                 args.noise.relative_motion.std_dev << 0.2, 0.2, 0.04, 0.05, 0.05, 0.05;
                 args.noise.orientation.std_dev = 0.05;
                 break;
