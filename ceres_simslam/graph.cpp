@@ -71,7 +71,7 @@ void Graph::addEdge(const size_t start, const size_t end, const RelativeMotion &
                     const Eigen::Matrix<double, 6, 6> &sqrt_info) {
     CHECK(start < nodes_.size()) << "Starting node id " << start << " not present in node list!";
     CHECK(end < nodes_.size()) << "Starting node id " << end << " not present in node list!";
-    edges_.emplace_back(Edge{start, end, motion, sqrt_info});
+    edges_.emplace_back(RelativeMotionEdge{start, end, motion, sqrt_info});
 }
 
 bool Graph::optimise() {

@@ -14,7 +14,7 @@
 
 namespace graph {
 
-struct Edge {
+struct RelativeMotionEdge {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     size_t start;
     size_t end;
@@ -71,7 +71,7 @@ private:
     addEdge(size_t start, size_t end, const pose::RelativeMotion &motion, const Eigen::Matrix<double, 6, 6> &sqrt_info);
 
     std::vector<Node> nodes_;
-    std::vector<Edge> edges_;
+    std::vector<RelativeMotionEdge> edges_;
     std::vector<OrientationEdge> orientation_edges_;
     size_t next_id_;
 };

@@ -20,7 +20,7 @@
 class RelativeMotionCost {
 public:
     //  The observed edge is the observed position of the second pose represented in the frame of the first
-    RelativeMotionCost(const graph::Edge& observed_edge)
+    RelativeMotionCost(const graph::RelativeMotionEdge& observed_edge)
         : observed_edge_(observed_edge) {}
 
     // This function takes in T[3] position T[4] quaternion for each pose
@@ -61,13 +61,13 @@ public:
     // So that we don't need to specify all the template parameters etc when we use this, follow the
     //  existing convention and create a convenience function to return us the CostFunction object (pointer) we need
     // Slightly oddly, the first non-type template parameter is the size of the output/residual array
-    static ceres::CostFunction* Create(const graph::Edge& observed_edge) {
+    static ceres::CostFunction* Create(const graph::RelativeMotionEdge& observed_edge) {
         return (new ceres::AutoDiffCostFunction<RelativeMotionCost, 6, 3, 4, 3, 4>(
                 new RelativeMotionCost(observed_edge)));
     }
 
 private:
-    graph::Edge observed_edge_;
+    graph::RelativeMotionEdge observed_edge_;
 };
 
 
