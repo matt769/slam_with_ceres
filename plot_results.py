@@ -43,16 +43,25 @@ def plot_trajectory(directory):
     ax1 = fig.add_subplot(131, projection='3d')
     ax1.plot(true_xyz[:, 0], true_xyz[:, 1], true_xyz[:, 2], c='g', marker='o')
     ax1.set_title("True")
+    ax1.set_xbound(-1, 13)
+    ax1.set_ybound(-1, 13)
+    ax1.set_zbound(-0.5, 0.5)
 
     ax2 = fig.add_subplot(132, projection='3d')
     ax2.plot(before_xyz[:, 0], before_xyz[:, 1], before_xyz[:, 2], c='r', marker='o')
     plot_loops(before_loops, ax2)
     ax2.set_title("Before")
+    ax2.set_xbound(-1, 13)
+    ax2.set_ybound(-1, 13)
+    ax2.set_zbound(-0.5, 0.5)
 
     ax3 = fig.add_subplot(133, projection='3d')
     ax3.plot(after_xyz[:, 0], after_xyz[:, 1], after_xyz[:, 2], c='b', marker='o')
     plot_loops(after_loops, ax3)
     ax3.set_title("After")
+    ax3.set_xbound(-1, 13)
+    ax3.set_ybound(-1, 13)
+    ax3.set_zbound(-0.5, 0.5)
 
     plt.savefig("plot.jpg")
 
