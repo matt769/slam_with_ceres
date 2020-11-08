@@ -20,6 +20,7 @@ struct Args {
     simulator::Noise noise;
     simulator::Drift drift;
     enum class LoopClosureLevel {NONE, SINGLE, MANY } loopclosure_level;
+    bool include_orientation_edges;
 };
 
 Args parseArgs(int argc, char* argv[]);
@@ -52,7 +53,7 @@ int main(int argc, char* argv[]) {
         } else {
             simulator.addMotionEdge(forward_motion);
         }
-        simulator.addOrientationEdge();
+        if (args.include_orientation_edges) simulator.addOrientationEdge();
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
         Eigen::Quaterniond q;
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
         } else {
             simulator.addMotionEdge(forward_motion);
         }
-        simulator.addOrientationEdge();
+        if (args.include_orientation_edges) simulator.addOrientationEdge();
     }
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
         Eigen::Quaterniond q;
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]) {
         } else {
             simulator.addMotionEdge(forward_motion);
         }
-        simulator.addOrientationEdge();
+        if (args.include_orientation_edges) simulator.addOrientationEdge();
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
         Eigen::Quaterniond q;
@@ -79,7 +80,7 @@ int main(int argc, char* argv[]) {
         } else {
             simulator.addMotionEdge(forward_motion);
         }
-        simulator.addOrientationEdge();
+        if (args.include_orientation_edges) simulator.addOrientationEdge();
     }
 
     // create a loop closure at the end
@@ -119,12 +120,13 @@ int main(int argc, char* argv[]) {
 }
 
 Args parseArgs(int argc, char* argv[]) {
-    const std::string bad_args_message = "Expecting 3 arguments\n"
+    const std::string bad_args_message = "Expecting 4 arguments\n"
                                    "Include noise, none (0), low (1), high (2)\n"
                                    "Include drift, none (0), low (1), high (2)\n"
                                    "Include loop closure, none (0), one (1), many (2)\n"
+                                   "Include orientation edges, no (0), yes (1)\n"
                                    "Example call:\n"
-                                   "simslam 1 1 0\n";
+                                   "simslam 1 1 0 1\n";
 
     auto printBadArgsAndExit = [&]() {
         std::cout << bad_args_message;
@@ -135,7 +137,7 @@ Args parseArgs(int argc, char* argv[]) {
         exit(1);
     };
 
-    if (argc != 4) {
+    if (argc != 5) {
         printBadArgsAndExit();
     }
 
@@ -196,6 +198,17 @@ Args parseArgs(int argc, char* argv[]) {
                 break;
             default:
                 std::cout << "Unexpected argument for loop closure level: " << argv[1] << '\n';
+                printBadArgsAndExit();
+        }
+        switch (std::stoi(argv[4])) {
+            case 0:
+                args.include_orientation_edges = false;
+                break;
+            case 1:
+                args.include_orientation_edges = true;
+                break;
+            default:
+                std::cout << "Unexpected argument for include orientation edge option: " << argv[1] << '\n';
                 printBadArgsAndExit();
         }
     }
