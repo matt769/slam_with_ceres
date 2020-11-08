@@ -23,7 +23,7 @@ make
 
 ## Run
 ```shell script
-./build/simslam 0 0 0
+./build/simslam
 ```
 Visualise results
 ```shell script
