@@ -148,12 +148,12 @@ Args parseArgs(int argc, char* argv[]) {
                 args.noise.orientation.std_dev = 0.0;
                 break;
             case 1:
-                args.noise.relative_motion.std_dev << 0.05, 0.05, 0.0, 0.0, 0.0, 0.0;
+                args.noise.relative_motion.std_dev << 0.05, 0.05, 0.01, 0.0, 0.0, 0.0;
                 args.noise.orientation.std_dev = 0.01;
                 break;
             case 2:
-                args.noise.relative_motion.std_dev << 0.2, 0.2, 0.0, 0.0, 0.0, 0.0;
-                args.noise.orientation.std_dev = 0.1;
+                args.noise.relative_motion.std_dev << 0.2, 0.2, 0.04, 0.0, 0.0, 0.0;
+                args.noise.orientation.std_dev = 0.05;
                 break;
             default:
                 std::cout << "Unexpected argument for noise level: " << argv[1] << '\n';
