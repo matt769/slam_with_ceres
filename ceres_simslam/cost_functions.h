@@ -116,6 +116,42 @@ private:
 };
 
 
+class GravityCost {
+public:
+    //  The measurement is the direction of gravity w.r.t. a node
+    GravityCost(const graph::GravityEdge& measurement)
+            : measurement_(measurement) {}
+
+    // This function takes in a T[4] quaternion for the pose of the node
+    // and returns T[3] residuals
+    template <typename T>
+    bool operator()(const T* const q_ptr, T* residuals_ptr) const {
+        Eigen::Map<const Eigen::Quaternion<T>> q(q_ptr);
+
+        // If we say that the direction of gravity should be along -Z
+        //  and we try to minimise the different between that and the measurement
+        //  then we essentially are aligning the frame in which we describe the nodes with a frame that has
+        //  it's horizontal plane orthogonal to gravity e.g. a local Earth-fixed coordinate frame
+
+        Eigen::Matrix<T, 3, 1> gravity_vector = q * measurement_.gravity_vector.cast<T>();
+        // we want a node orientation that produces a gravity measurement equal to 0,0,-1
+        Eigen::Map<Eigen::Matrix<T, 3, 1>> residuals(residuals_ptr);
+        residuals.template block<3, 1>(0, 0) = gravity_vector + Eigen::Matrix<T, 3, 1>::UnitZ();
+
+        // Weight the residuals by uncertainty
+        residuals.applyOnTheLeft(measurement_.sqrt_info.template cast<T>());;
+
+        return true;
+    }
+
+    static ceres::CostFunction* Create(const graph::GravityEdge& measurement) {
+        return (new ceres::AutoDiffCostFunction<GravityCost, 3, 4>(
+                new GravityCost(measurement)));
+    }
+
+private:
+    graph::GravityEdge measurement_;
+};
 
 
 #endif //CERES_SIMSLAM_COST_FUNCTIONS_H
