@@ -92,6 +92,16 @@ It's quite effective even when there is a lot of noise on the relative motion an
 ```
 ![](images/plot3101.jpg)
 
+If the absolute heading of an orientation reading can't be used e.g. 
+IMU does not contain a magnetometer or another way to maintain an absolute heading,
+then we can just use the pitch and roll elements. Here this is achieved by constructing a 'gravity vector' which defines a horizontal plane that the nodes should be aligned to.
+This is probably easiest to see working with just some drift. The optimised trajectory still contains drift due to xy movement and yaw, but is (correctly) flattened down to the horizontal plane (although that's not completely clear from the 3d plot).  
+```shell script
+./build/simslam 2 0 0 2
+```
+![](images/plot0202.jpg)
+
+
 
 ## TODO
 Add more (simulated) sensor information...

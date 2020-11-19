@@ -21,6 +21,7 @@ struct Args {
     simulator::Drift drift;
     enum class LoopClosureLevel {NONE, SINGLE, MANY } loopclosure_level;
     bool include_orientation_edges;
+    bool include_gravity_edges;
 };
 
 Args parseArgs(int argc, char* argv[]);
@@ -54,6 +55,7 @@ int main(int argc, char* argv[]) {
             simulator.addMotionEdge(forward_motion);
         }
         if (args.include_orientation_edges) simulator.addOrientationEdge();
+        if (args.include_gravity_edges) simulator.addGravityEdge();
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
         Eigen::Quaterniond q;
@@ -63,6 +65,7 @@ int main(int argc, char* argv[]) {
             simulator.addMotionEdge(forward_motion);
         }
         if (args.include_orientation_edges) simulator.addOrientationEdge();
+        if (args.include_gravity_edges) simulator.addGravityEdge();
     }
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
         Eigen::Quaterniond q;
@@ -72,6 +75,7 @@ int main(int argc, char* argv[]) {
             simulator.addMotionEdge(forward_motion);
         }
         if (args.include_orientation_edges) simulator.addOrientationEdge();
+        if (args.include_gravity_edges) simulator.addGravityEdge();
     }
     for (size_t idx = 0; idx < steps_left_right; ++idx) {
         Eigen::Quaterniond q;
@@ -81,6 +85,7 @@ int main(int argc, char* argv[]) {
             simulator.addMotionEdge(forward_motion);
         }
         if (args.include_orientation_edges) simulator.addOrientationEdge();
+        if (args.include_gravity_edges) simulator.addGravityEdge();
     }
 
     // create a loop closure at the end
@@ -122,9 +127,9 @@ int main(int argc, char* argv[]) {
 Args parseArgs(int argc, char* argv[]) {
     const std::string bad_args_message = "Expecting 4 arguments\n"
                                    "Include noise, none (0), motion xy only (1), motion all (2), more! (3)\n"
-                                   "Include drift, none (0), low (1), high (2)\n"
+                                   "Include drift, none (0), xy and yaw only (1), all (2), more! (3)\n"
                                    "Include loop closure, none (0), one (1), many (2)\n"
-                                   "Include orientation edges, no (0), yes (1)\n"
+                                   "Include orientation edges, no (0), yes (1), gravity only (2)\n"
                                    "Example call:\n"
                                    "simslam 1 1 0 1\n";
 
@@ -181,8 +186,17 @@ Args parseArgs(int argc, char* argv[]) {
                 args.drift = simulator::Drift(drift_p, drift_q);
                 break;
             case 2:
-                drift_p = Eigen::Vector3d(0.2, 0.2, 0.0);
-                drift_q = Eigen::Quaterniond(Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()));
+                drift_p = Eigen::Vector3d(0.05, 0.05, 0.01);
+                drift_q = Eigen::Quaterniond(Eigen::AngleAxisd(0.005, Eigen::Vector3d::UnitX())
+                                            * Eigen::AngleAxisd(0.005, Eigen::Vector3d::UnitY())
+                                            * Eigen::AngleAxisd(0.005, Eigen::Vector3d::UnitZ()));
+                args.drift = simulator::Drift(drift_p, drift_q);
+                break;
+            case 3:
+                drift_p = Eigen::Vector3d(0.2, 0.2, 0.05);
+                drift_q = Eigen::Quaterniond(Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitX())
+                                             * Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitY())
+                                             * Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()));
                 args.drift = simulator::Drift(drift_p, drift_q);
                 break;
             default:
@@ -207,9 +221,15 @@ Args parseArgs(int argc, char* argv[]) {
         switch (std::stoi(argv[4])) {
             case 0:
                 args.include_orientation_edges = false;
+                args.include_gravity_edges = false;
                 break;
             case 1:
                 args.include_orientation_edges = true;
+                args.include_gravity_edges = false;
+                break;
+            case 2:
+                args.include_orientation_edges = false;
+                args.include_gravity_edges = true;
                 break;
             default:
                 std::cout << "Unexpected argument for include orientation edge option: " << argv[1] << '\n';
