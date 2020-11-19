@@ -72,7 +72,7 @@ void Simulator::addOrientationEdge() {
     graph_.addOrientationEdge(addNoise(measurement), orientation_sqrt_info_);
 }
 
-void Simulator::addgravityEdge() {
+void Simulator::addGravityEdge() {
     const Eigen::Vector3d measurement = ground_truth_.getLastNode().pose_.q_.conjugate() * gravity_;
     ground_truth_.addGravityEdge(measurement, Eigen::Matrix<double, 3, 3>::Identity());
     graph_.addGravityEdge(addNoise(measurement), gravity_sqrt_info_);

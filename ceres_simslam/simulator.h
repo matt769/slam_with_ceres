@@ -42,7 +42,7 @@ public:
 
     void addOrientationEdge();
 
-    void addgravityEdge();
+    void addGravityEdge();
 
     void addLoopClosure();
 
