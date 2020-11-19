@@ -31,6 +31,12 @@ Simulator::Simulator(Noise noise, Drift drift)
     orientation_cov = orientation_cov + Eigen::Matrix<double, 3, 3>::Identity();
     orientation_sqrt_info_ = orientation_cov.inverse().sqrt();
 
+    Eigen::Matrix<double, 3, 3> gravity_cov = Eigen::Matrix<double, 3, 3>::Zero();
+    // Just re-using the orientation noise
+    gravity_cov.diagonal() = Eigen::Vector3d(noise_.orientation.std_dev, noise_.orientation.std_dev, noise_.orientation.std_dev);
+    gravity_cov = gravity_cov + Eigen::Matrix<double, 3, 3>::Identity();
+    gravity_sqrt_info_ = gravity_cov.inverse().sqrt();
+
     Eigen::Matrix<double, 6, 6> relative_motion_cov = Eigen::Matrix<double, 6, 6>::Zero();
     relative_motion_cov.diagonal() << noise_.relative_motion.std_dev, noise_.relative_motion.std_dev,
                                         noise_.relative_motion.std_dev, noise_.relative_motion.std_dev,
@@ -39,6 +45,7 @@ Simulator::Simulator(Noise noise, Drift drift)
     relative_motion_sqrt_info_ = relative_motion_cov.inverse().sqrt();
 
     setMeasurableFixedFrame(Eigen::Quaterniond::Identity());
+    gravity_ = Eigen::Vector3d::UnitZ();
 }
 
 void Simulator::setNoise(Noise noise) {
@@ -63,6 +70,12 @@ void Simulator::addOrientationEdge() {
     const Eigen::Quaterniond measurement = ground_truth_.getLastNode().pose_.q_.conjugate() * measurable_fixed_frame_;
     ground_truth_.addOrientationEdge(measurement, Eigen::Matrix<double, 3, 3>::Identity());
     graph_.addOrientationEdge(addNoise(measurement), orientation_sqrt_info_);
+}
+
+void Simulator::addgravityEdge() {
+    const Eigen::Vector3d measurement = ground_truth_.getLastNode().pose_.q_.conjugate() * gravity_;
+    ground_truth_.addGravityEdge(measurement, Eigen::Matrix<double, 3, 3>::Identity());
+    graph_.addGravityEdge(addNoise(measurement), gravity_sqrt_info_);
 }
 
 void Simulator::addLoopClosure() {
@@ -107,6 +120,15 @@ Eigen::Quaterniond Simulator::addNoise(const Eigen::Quaterniond& rotation) {
     Eigen::Quaterniond noisy_rotation = rotation;
     noisy_rotation *= generateRandomRotation(noise_.orientation.std_dev);
     return noisy_rotation;
+}
+
+// TODO using the noise generator for the relative motion for temporary convenience
+Eigen::Vector3d Simulator::addNoise(const Eigen::Vector3d &v) {
+    Eigen::Vector3d noisy_vector = v;
+    noisy_vector.x() += noise_distribution_[0](noise_generator_);
+    noisy_vector.y() += noise_distribution_[1](noise_generator_);
+    noisy_vector.z() += noise_distribution_[2](noise_generator_);
+    return noisy_vector;
 }
 
 RelativeMotion Simulator::addDrift(const RelativeMotion& motion) {

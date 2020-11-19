@@ -42,6 +42,8 @@ public:
 
     void addOrientationEdge();
 
+    void addgravityEdge();
+
     void addLoopClosure();
 
     void addLoopClosure(size_t start, size_t end);
@@ -64,7 +66,9 @@ private:
     std::default_random_engine noise_generator_;
     std::vector<std::normal_distribution<double>> noise_distribution_;
     Eigen::Quaterniond measurable_fixed_frame_;
+    Eigen::Vector3d gravity_;
     Eigen::Matrix<double, 3, 3> orientation_sqrt_info_;
+    Eigen::Matrix<double, 3, 3> gravity_sqrt_info_;
     Eigen::Matrix<double, 6, 6> relative_motion_sqrt_info_;
 
     void setNoise(Noise noise);
@@ -72,6 +76,8 @@ private:
     pose::RelativeMotion addNoise(const pose::RelativeMotion &motion);
 
     Eigen::Quaterniond addNoise(const Eigen::Quaterniond &rotation);
+
+    Eigen::Vector3d addNoise(const Eigen::Vector3d &v);
 
     pose::RelativeMotion addDrift(const pose::RelativeMotion &motion);
 
