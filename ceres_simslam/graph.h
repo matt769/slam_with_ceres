@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <variant>
 
 #include <Eigen/Core>
 
@@ -49,6 +50,8 @@ public:
 
     void addOrientationEdge(const Eigen::Quaterniond &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info);
 
+    void addGravityEdge(const Eigen::Vector3d &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info);
+
     void addLoopClosureEdge(size_t start, size_t end, const pose::RelativeMotion &motion,
                             const Eigen::Matrix<double, 6, 6> &sqrt_info);
 
@@ -78,7 +81,7 @@ private:
 
     std::vector<Node> nodes_;
     std::vector<RelativeMotionEdge> edges_;
-    std::vector<OrientationEdge> orientation_edges_;
+    std::vector<std::variant<OrientationEdge, GravityEdge>> orientation_edges_;
     size_t next_id_;
 };
 

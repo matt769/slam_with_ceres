@@ -16,6 +16,9 @@
 namespace graph {
 using namespace pose;
 
+template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
+template<class... Ts> overload(Ts...) -> overload<Ts...>;
+
 Graph::Graph() : next_id_(0) {}
 
 void Graph::addFirstNode(const Pose &pose) {
@@ -30,10 +33,14 @@ void Graph::addMotionEdge(const RelativeMotion &motion, const Eigen::Matrix<doub
     addEdge(getLastNodeId() - 1, getLastNodeId(), motion, sqrt_info);
 }
 
-void
-Graph::addOrientationEdge(const Eigen::Quaterniond &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info) {
+void Graph::addOrientationEdge(const Eigen::Quaterniond &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info) {
     CHECK(next_id_ > 0) << "Graph needs to contain at least 1 node first!";;
     orientation_edges_.emplace_back(OrientationEdge{getLastNodeId(), measurement, sqrt_info});
+}
+
+void Graph::addGravityEdge(const Eigen::Vector3d &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info) {
+    CHECK(next_id_ > 0) << "Graph needs to contain at least 1 node first!";;
+    orientation_edges_.emplace_back(GravityEdge{getLastNodeId(), measurement, sqrt_info});
 }
 
 void Graph::addLoopClosureEdge(const size_t start, const size_t end, const RelativeMotion &motion,
@@ -98,11 +105,23 @@ bool Graph::optimise() {
     // TODO release fixed first node
 
     for (const auto &edge: orientation_edges_) {
-        ceres::CostFunction *cost_function = OrientationCost::Create(edge);
-        problem.AddResidualBlock(cost_function, loss_function,
-                                 nodes_[edge.node_id].pose_.q_.coeffs().data());
-        problem.SetParameterization(nodes_[edge.node_id].pose_.q_.coeffs().data(),
-                                    quaternion_local_parameterization);
+        std::visit(overload {
+                [&](const OrientationEdge& o_edge) {
+                    ceres::CostFunction *cost_function = OrientationCost::Create(o_edge);
+                    problem.AddResidualBlock(cost_function, loss_function,
+                                             nodes_[o_edge.node_id].pose_.q_.coeffs().data());
+                    problem.SetParameterization(nodes_[o_edge.node_id].pose_.q_.coeffs().data(),
+                                                quaternion_local_parameterization);
+                },
+                [&](const GravityEdge& g_edge) {
+                    ceres::CostFunction *cost_function = GravityCost::Create(g_edge);
+                    problem.AddResidualBlock(cost_function, loss_function,
+                                             nodes_[g_edge.node_id].pose_.q_.coeffs().data());
+                    problem.SetParameterization(nodes_[g_edge.node_id].pose_.q_.coeffs().data(),
+                                                quaternion_local_parameterization);
+                }
+            },
+           edge);
     }
 
     ceres::Solver::Options options;
@@ -142,10 +161,15 @@ std::string Graph::edgesToString() const {
     return ss.str();
 }
 
+// TODO add explicit indication of which type it is?
 std::string Graph::orientationEdgesToString() const {
     std::stringstream ss;
-    for (const auto &edge: orientation_edges_) {
-        ss << edge.node_id << ' ' << edge.orientation.coeffs().transpose() << '\n';
+    for (const auto& edge: orientation_edges_) {
+        std::visit(overload {
+           [&](const OrientationEdge& o_edge) { ss << o_edge.node_id << ' ' << o_edge.orientation.coeffs().transpose() << '\n';  },
+           [&](const GravityEdge& g_edge) { ss << g_edge.node_id << ' ' << g_edge.gravity_vector.transpose() << '\n'; }
+           },
+           edge);
     }
     return ss.str();
 }
