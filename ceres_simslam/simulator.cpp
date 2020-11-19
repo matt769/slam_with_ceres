@@ -45,7 +45,7 @@ Simulator::Simulator(Noise noise, Drift drift)
     relative_motion_sqrt_info_ = relative_motion_cov.inverse().sqrt();
 
     setMeasurableFixedFrame(Eigen::Quaterniond::Identity());
-    gravity_ = Eigen::Vector3d::UnitZ();
+    gravity_ = -Eigen::Vector3d::UnitZ();
 }
 
 void Simulator::setNoise(Noise noise) {
