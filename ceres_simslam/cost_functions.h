@@ -175,7 +175,7 @@ public:
     }
 
     static ceres::CostFunction* Create(const graph::AbsolutePositionEdge& measurement) {
-        return (new ceres::AutoDiffCostFunction<AbsolutePositionCost, 3, 4>(
+        return (new ceres::AutoDiffCostFunction<AbsolutePositionCost, 3, 3>(
                 new AbsolutePositionCost(measurement)));
     }
 
