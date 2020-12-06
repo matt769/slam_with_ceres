@@ -22,6 +22,7 @@ struct Args {
     enum class LoopClosureLevel {NONE, SINGLE, MANY } loopclosure_level;
     bool include_orientation_edges;
     bool include_gravity_edges;
+    enum class AbsolutePositionLevel {NONE, SINGLE, TWO } absolute_position_level;
 };
 
 Args parseArgs(int argc, char* argv[]);
@@ -38,11 +39,20 @@ int main(int argc, char* argv[]) {
     const Eigen::Quaterniond fixed_frame = Eigen::Quaterniond::Identity();
     simulator.setMeasurableFixedFrame(fixed_frame);
 
+    // Set a non-zero starting point if we're using absolute position measurements
+    //  so that we can actually see their effect
+    if (args.absolute_position_level != Args::AbsolutePositionLevel::NONE) {
+        Pose absolute_frame;
+        absolute_frame.p_ = Eigen::Vector3d(5.0, 5.0, 0.2);
+        absolute_frame.q_ = Eigen::Quaterniond(Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ()));
+        simulator.setAbsoluteFrame(absolute_frame);
+    }
+
     Pose starting_pose;
     simulator.addFirstNode(starting_pose);
-    // add a gnss node to 'move' the starting point
-    Eigen::Vector3d gnss_measurement = Eigen::Vector3d::Ones();
-    simulator.addAbsolutePositionEdge(gnss_measurement);
+    if (args.absolute_position_level != Args::AbsolutePositionLevel::NONE) {
+        simulator.addAbsolutePositionEdge();
+    }
 
     constexpr size_t steps_fw_bw = 10;
     constexpr size_t steps_left_right = 6;
@@ -71,6 +81,11 @@ int main(int argc, char* argv[]) {
         if (args.include_orientation_edges) simulator.addOrientationEdge();
         if (args.include_gravity_edges) simulator.addGravityEdge();
     }
+
+    if (args.absolute_position_level == Args::AbsolutePositionLevel::TWO) {
+        simulator.addAbsolutePositionEdge();
+    }
+
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
         Eigen::Quaterniond q;
         if (idx == steps_fw_bw - 1) {
@@ -129,13 +144,14 @@ int main(int argc, char* argv[]) {
 }
 
 Args parseArgs(int argc, char* argv[]) {
-    const std::string bad_args_message = "Expecting 4 arguments\n"
+    const std::string bad_args_message = "Expecting 5 arguments\n"
                                    "Include noise, none (0), motion xy only (1), motion all (2), more! (3)\n"
                                    "Include drift, none (0), xy and yaw only (1), all (2), more! (3)\n"
                                    "Include loop closure, none (0), one (1), many (2)\n"
                                    "Include orientation edges, no (0), yes (1), gravity only (2)\n"
+                                   "Include absolute position measurements, no (0), one at the start (1), two - at start and middle (2)\n"
                                    "Example call:\n"
-                                   "simslam 1 1 0 1\n";
+                                   "simslam 1 1 0 1 0\n";
 
     auto printBadArgsAndExit = [&]() {
         std::cout << bad_args_message;
@@ -146,7 +162,7 @@ Args parseArgs(int argc, char* argv[]) {
         exit(1);
     };
 
-    if (argc != 5) {
+    if (argc != 6) {
         printBadArgsAndExit();
     }
 
@@ -219,7 +235,7 @@ Args parseArgs(int argc, char* argv[]) {
                 args.loopclosure_level = Args::LoopClosureLevel::MANY;
                 break;
             default:
-                std::cout << "Unexpected argument for loop closure level: " << argv[1] << '\n';
+                std::cout << "Unexpected argument for loop closure level: " << argv[3] << '\n';
                 printBadArgsAndExit();
         }
         switch (std::stoi(argv[4])) {
@@ -236,7 +252,21 @@ Args parseArgs(int argc, char* argv[]) {
                 args.include_gravity_edges = true;
                 break;
             default:
-                std::cout << "Unexpected argument for include orientation edge option: " << argv[1] << '\n';
+                std::cout << "Unexpected argument for include orientation edge option: " << argv[4] << '\n';
+                printBadArgsAndExit();
+        }
+        switch (std::stoi(argv[5])) {
+            case 0:
+                args.absolute_position_level = Args::AbsolutePositionLevel::NONE;
+                break;
+            case 1:
+                args.absolute_position_level = Args::AbsolutePositionLevel::SINGLE;
+                break;
+            case 2:
+                args.absolute_position_level = Args::AbsolutePositionLevel::TWO;
+                break;
+            default:
+                std::cout << "Unexpected argument for absolute positions option: " << argv[5] << '\n';
                 printBadArgsAndExit();
         }
     }
