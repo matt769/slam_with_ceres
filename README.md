@@ -105,7 +105,6 @@ This is probably easiest to see working with just some drift. The optimised traj
 
 ## TODO
 Add more (simulated) sensor information...
- - Gravity vector instead from 'IMU' (i.e. no yaw information)
  - Absolute position measurements for a few nodes from 'GNSS'
  - Offset IMU and GNSS measurement frames, and then estimate (refine as part of optimisation)
  - Nicer input arguments!
