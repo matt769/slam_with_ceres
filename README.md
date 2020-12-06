@@ -105,7 +105,7 @@ This is probably easiest to see working with just some drift. The optimised traj
 
 ## TODO
 Add more (simulated) sensor information...
- - Absolute position measurements for a few nodes from 'GNSS'
+ - Add absolute position measurement output to README
  - Offset IMU and GNSS measurement frames, and then estimate (refine as part of optimisation)
  - Nicer input arguments!
  - Tidy noise generation parts

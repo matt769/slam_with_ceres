@@ -34,7 +34,15 @@ int main(int argc, char* argv[]) {
     Args args = parseArgs(argc, argv);
 
     Simulator simulator(args.noise, args.drift);
-    simulator.addFirstNode(Pose());
+    // let's say the fixed frame we observe with our orientation measurements is identity for now
+    const Eigen::Quaterniond fixed_frame = Eigen::Quaterniond::Identity();
+    simulator.setMeasurableFixedFrame(fixed_frame);
+
+    Pose starting_pose;
+    simulator.addFirstNode(starting_pose);
+    // add a gnss node to 'move' the starting point
+    Eigen::Vector3d gnss_measurement = Eigen::Vector3d::Ones();
+    simulator.addAbsolutePositionEdge(gnss_measurement);
 
     constexpr size_t steps_fw_bw = 10;
     constexpr size_t steps_left_right = 6;
@@ -43,10 +51,6 @@ int main(int argc, char* argv[]) {
     const Eigen::Quaterniond face_forward = Eigen::Quaterniond::Identity();
     const RelativeMotion forward_motion = RelativeMotion(forward, face_forward);
     const RelativeMotion forward_and_turn_left = RelativeMotion(forward, left_turn);
-
-    // let's say the fixed frame we observe with our orientation measurements is identity for now
-    const Eigen::Quaterniond fixed_frame = Eigen::Quaterniond::Identity();
-    simulator.setMeasurableFixedFrame(fixed_frame);
 
     for (size_t idx = 0; idx < steps_fw_bw; ++idx) {
         if (idx == steps_fw_bw - 1) {

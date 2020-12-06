@@ -44,6 +44,8 @@ public:
 
     void addGravityEdge();
 
+    void addAbsolutePositionEdge(const Eigen::Vector3d& p);
+
     void addLoopClosure();
 
     void addLoopClosure(size_t start, size_t end);

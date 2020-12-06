@@ -78,6 +78,14 @@ void Simulator::addGravityEdge() {
     graph_.addGravityEdge(addNoise(measurement), gravity_sqrt_info_);
 }
 
+// TODO probably remove the ability to provide the measurement directly, but useful for testing
+void Simulator::addAbsolutePositionEdge(const Eigen::Vector3d& p) {
+//    const Eigen::Vector3d measurement = ground_truth_.getLastNode().pose_.p;
+    ground_truth_.addAbsolutePositionEdge(p, Eigen::Matrix<double, 3, 3>::Identity());
+    // TODO create proper info matrix
+    graph_.addAbsolutePositionEdge(addNoise(p), Eigen::Matrix<double, 3, 3>::Identity());
+}
+
 void Simulator::addLoopClosure() {
     // atm fixed to be a beginning/end loop closure
     addLoopClosure(ground_truth_.getLastNodeId(), 0);
