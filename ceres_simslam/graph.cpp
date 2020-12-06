@@ -134,9 +134,12 @@ bool Graph::optimise() {
     if (absolute_position_edges_.empty()) {
         problem.SetParameterBlockConstant(nodes_[0].pose_.p_.data());
     }
-
     // TODO release fixed orientation, or partially release if only gravity available
-    problem.SetParameterBlockConstant(nodes_[0].pose_.q_.coeffs().data());
+    //  or if there are multiple absolute positions
+    if (absolute_position_edges_.size() < 2) {
+        problem.SetParameterBlockConstant(nodes_[0].pose_.q_.coeffs().data());
+    }
+
 
 
     ceres::Solver::Options options;
