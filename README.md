@@ -31,68 +31,68 @@ python plot_results.py ./build
 ```
 
 ## Notes
-With no noise, drift or loop closures.  
+A. With no noise, drift or loop closures.  
 The initial state of the trjaectory is exactly the true trajectory, and there is noting for the optimiser to do.
 ```shell script
 ./build/simslam 0 0 0 0
 ```
 ![](images/plot0000.jpg)
-
-With a little drift.  
+___
+B. With a little drift.  
 Now the initial values of the nodes in the trajectory are not correct (except the first), and the end position is clearly well off where it should be. 
 In this case the only information available in the optimisation is a linear sequence of odometry measurements which is all self-consistent i.e. there's no other information to contradict the odometry, which is why the optimisation cannot fix this.
 ```shell script
 ./build/simslam 0 1 0 0
 ```
 ![](images/plot0100.jpg)
-
-With drift and a loop closure observation (yellow line) between the start and end of the trajectory.  
+___
+C. With drift and a loop closure observation (yellow line) between the start and end of the trajectory.  
 Now we have an additional measurement between the start and end of the trajectory that is inconsistent with the odometry information. The optimisation is now able to 'correct' the errors in odometry. However, some 'warping' of the true trajectory remains (due to drift error in the translation element of the odometry measurement) which the single loop closure cannot fix, because it provides no additional information about the rest of the trajectory.   
 ```shell script
 ./build/simslam 0 1 1 0
 ```
 ![](images/plot0110.jpg)
-
-With a few more loop closures.  
+___
+D. With a few more loop closures.  
 Now the warping is fixed - of course in practice it may not always be possible to generate such constraints exactly where we want.
 ```shell script
 ./build/simslam 0 1 2 0
 ```
 ![](images/plot0120.jpg)
-
-Add some noise as well for a marginal increase in realism. This only adds noise to the x and y components of the relative motion.
+___
+E. Add some noise as well for a marginal increase in realism. This only adds noise to the x and y components of the relative motion.
 ```shell script
 ./build/simslam 1 1 2 0
 ```
 ![](images/plot1120.jpg)
-
-Add noise to all components of the relative motions (translational and rotational).
+___
+F. Add noise to all components of the relative motions (translational and rotational).
 ```shell script
 ./build/simslam 2 1 2 0
 ```
 ![](images/plot2120.jpg)
-
-Increase the noise! These (deliberately convenient) loop closures are quite effective.
+___
+G. Increase the noise! These (deliberately convenient) loop closures are quite effective.
 ```shell script
 ./build/simslam 3 1 2 0
 ```
 ![](images/plot3120.jpg)
-
-Adding orientation edges to each node can also improve the optimised trajectory. 
+___
+H. Adding orientation edges to each node can also improve the optimised trajectory. 
 This is some measurement of absolute orientation e.g. as we might get from an IMU (including magnetometer for heading).
 In this example loop closure is removed completely.
 ```shell script
 ./build/simslam 0 1 0 1
 ```
 ![](images/plot0101.jpg)
-
-It's quite effective even when there is a lot of noise on the relative motion and orientation measurements.
+___
+I. It's quite effective even when there is a lot of noise on the relative motion and orientation measurements.
 ```shell script
 ./build/simslam 3 1 0 1
 ```
 ![](images/plot3101.jpg)
-
-If the absolute heading of an orientation reading can't be used e.g. 
+___
+J. If the absolute heading of an orientation reading can't be used e.g. 
 IMU does not contain a magnetometer or another way to maintain an absolute heading,
 then we can just use the pitch and roll elements. Here this is achieved by constructing a 'gravity vector' which defines a horizontal plane that the nodes should be aligned to.
 This is probably easiest to see working with just some drift. The optimised trajectory still contains drift due to xy movement and yaw, but is (correctly) flattened down to the horizontal plane (although that's not completely clear from the 3d plot).  
