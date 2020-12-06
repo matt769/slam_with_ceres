@@ -154,4 +154,33 @@ private:
 };
 
 
+class AbsolutePositionCost {
+public:
+    //  The measurement is the absolute position of a node
+    AbsolutePositionCost(const graph::AbsolutePositionEdge& measurement)
+            : measurement_(measurement) {}
+
+    // This function takes in a T[3] vector for the pose of the node
+    // and returns T[3] residuals
+    template <typename T>
+    bool operator()(const T* const p_ptr, T* residuals_ptr) const {
+        Eigen::Map<const Eigen::Matrix<T, 3, 1>> p(p_ptr);
+        Eigen::Map<Eigen::Matrix<T, 3, 1>> residuals(residuals_ptr);
+        residuals.template block<3, 1>(0, 0) = p - measurement_.position.cast<T>();
+
+        // Weight the residuals by uncertainty
+        residuals.applyOnTheLeft(measurement_.sqrt_info.template cast<T>());;
+
+        return true;
+    }
+
+    static ceres::CostFunction* Create(const graph::AbsolutePositionEdge& measurement) {
+        return (new ceres::AutoDiffCostFunction<AbsolutePositionCost, 3, 4>(
+                new AbsolutePositionCost(measurement)));
+    }
+
+private:
+    graph::AbsolutePositionEdge measurement_;
+};
+
 #endif //CERES_SIMSLAM_COST_FUNCTIONS_H

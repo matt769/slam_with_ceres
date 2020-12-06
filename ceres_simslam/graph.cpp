@@ -43,6 +43,11 @@ void Graph::addGravityEdge(const Eigen::Vector3d &measurement, const Eigen::Matr
     orientation_edges_.emplace_back(GravityEdge{getLastNodeId(), measurement, sqrt_info});
 }
 
+void Graph::addAbsolutePositionEdge(const Eigen::Vector3d &measurement, const Eigen::Matrix<double, 3, 3> &sqrt_info) {
+    CHECK(next_id_ > 0) << "Graph needs to contain at least 1 node first!";;
+    absolute_position_edges_.emplace_back(AbsolutePositionEdge{getLastNodeId(), measurement, sqrt_info});
+}
+
 void Graph::addLoopClosureEdge(const size_t start, const size_t end, const RelativeMotion &motion,
                                const Eigen::Matrix<double, 6, 6> &sqrt_info) {
     CHECK(start < nodes_.size()) << "Starting node id " << start << " not present in node list!";
@@ -100,10 +105,6 @@ bool Graph::optimise() {
                                     quaternion_local_parameterization);
     }
 
-    problem.SetParameterBlockConstant(nodes_[0].pose_.p_.data());
-    problem.SetParameterBlockConstant(nodes_[0].pose_.q_.coeffs().data());
-    // TODO release fixed first node
-
     for (const auto &edge: orientation_edges_) {
         std::visit(overload {
                 [&](const OrientationEdge& o_edge) {
@@ -123,6 +124,17 @@ bool Graph::optimise() {
             },
            edge);
     }
+
+    for (const auto &edge: absolute_position_edges_) {
+        ceres::CostFunction *cost_function = AbsolutePositionCost::Create(edge);
+        problem.AddResidualBlock(cost_function, loss_function,
+                                 nodes_[edge.node_id].pose_.p_.data());
+    }
+
+    problem.SetParameterBlockConstant(nodes_[0].pose_.p_.data());
+    problem.SetParameterBlockConstant(nodes_[0].pose_.q_.coeffs().data());
+    // TODO release fixed first node
+
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
