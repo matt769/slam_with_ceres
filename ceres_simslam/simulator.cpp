@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <unsupported/Eigen/MatrixFunctions>
+#include <glog/logging.h>
 
 #include "pose.h"
 #include "graph.h"
@@ -46,6 +47,8 @@ Simulator::Simulator(Noise noise, Drift drift)
 
     setMeasurableFixedFrame(Eigen::Quaterniond::Identity());
     gravity_ = -Eigen::Vector3d::UnitZ();
+
+    setAbsoluteFrame(Pose());
 }
 
 void Simulator::setNoise(Noise noise) {
@@ -56,8 +59,9 @@ void Simulator::setNoise(Noise noise) {
 }
 
 void Simulator::addFirstNode(const Pose& pose) {
+    CHECK(ground_truth_.getNodes().empty());
+    ground_truth_.addFirstNode(absolute_frame_ * pose);
     graph_.addFirstNode(pose);
-    ground_truth_.addFirstNode(pose);
 }
 
 void Simulator::addMotionEdge(const RelativeMotion& motion) {
@@ -78,12 +82,11 @@ void Simulator::addGravityEdge() {
     graph_.addGravityEdge(addNoise(measurement), gravity_sqrt_info_);
 }
 
-// TODO probably remove the ability to provide the measurement directly, but useful for testing
-void Simulator::addAbsolutePositionEdge(const Eigen::Vector3d& p) {
-//    const Eigen::Vector3d measurement = ground_truth_.getLastNode().pose_.p;
-    ground_truth_.addAbsolutePositionEdge(p, Eigen::Matrix<double, 3, 3>::Identity());
+void Simulator::addAbsolutePositionEdge() {
+    const Eigen::Vector3d measurement = ground_truth_.getLastNode().pose_.p_;
+    ground_truth_.addAbsolutePositionEdge(measurement, Eigen::Matrix<double, 3, 3>::Identity());
     // TODO create proper info matrix
-    graph_.addAbsolutePositionEdge(addNoise(p), Eigen::Matrix<double, 3, 3>::Identity());
+    graph_.addAbsolutePositionEdge(addNoise(measurement), Eigen::Matrix<double, 3, 3>::Identity());
 }
 
 void Simulator::addLoopClosure() {
@@ -104,7 +107,13 @@ void Simulator::addLoopClosure(const size_t start, const size_t end) {
 }
 
 void Simulator::setMeasurableFixedFrame(const Eigen::Quaterniond& q) {
+    CHECK(ground_truth_.getNodes().empty());
     measurable_fixed_frame_ = q;
+}
+
+void Simulator::setAbsoluteFrame(const pose::Pose& frame) {
+    CHECK(ground_truth_.getNodes().empty());
+    absolute_frame_ = frame;
 }
 
 bool Simulator::optimiseGraph() {

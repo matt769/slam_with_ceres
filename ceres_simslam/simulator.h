@@ -44,13 +44,15 @@ public:
 
     void addGravityEdge();
 
-    void addAbsolutePositionEdge(const Eigen::Vector3d& p);
+    void addAbsolutePositionEdge();
 
     void addLoopClosure();
 
     void addLoopClosure(size_t start, size_t end);
 
     void setMeasurableFixedFrame(const Eigen::Quaterniond &q);
+
+    void setAbsoluteFrame(const pose::Pose& frame);
 
     bool optimiseGraph();
 
@@ -68,6 +70,7 @@ private:
     std::default_random_engine noise_generator_;
     std::vector<std::normal_distribution<double>> noise_distribution_;
     Eigen::Quaterniond measurable_fixed_frame_;
+    pose::Pose absolute_frame_;
     Eigen::Vector3d gravity_;
     Eigen::Matrix<double, 3, 3> orientation_sqrt_info_;
     Eigen::Matrix<double, 3, 3> gravity_sqrt_info_;
